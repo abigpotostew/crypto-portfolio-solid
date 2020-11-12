@@ -1,31 +1,24 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
-import {AuthButton, LoggedIn, LoggedOut, Value, List, Link} from "@solid/react"
-import EnhancedTable from "../components/EnhancedTable";
-import {
-    useWebId, useAuthentication,
-    useMyProfile, useProfile,
-    useEnsured, useContainer,
-    useThing
-} from 'swrlit'
-import Accounts from "../components/accounts"
-import Ledger from "../components/ledger"
-import Button from '@material-ui/core/Button';
+import {AuthButton, Link, LoggedIn, LoggedOut, Value} from "@solid/react"
+import EnhancedTable, {EditableNumericCell} from "../components/EnhancedTable";
 
 import dynamic from "next/dynamic";
 import superagent from "superagent";
 import React from "react";
-import CurrencySelect from "../components/CurrencySelect";
+import MarketRatesTicker from "../components/marketRates";
+import {coinBase, initialMarketRates, mergeRates} from "../src/marketrates";
+import computeMarketRate from "../src/compute";
 
-const OAuthButton = dynamic(() => import("../components/auth"), { ssr: false });
+const OAuthButton = dynamic(() => import("../components/auth"), {ssr: false});
 
-function onLoggedIn(token){
-  // console.log(token)
+function onLoggedIn(token) {
+    // console.log(token)
 
-  //invoke api
+    //invoke api
 
-  // this is blocked by coinbase cors, so it needs to be proxied.
-  superagent.get(process.env.NEXT_PUBLIC_COINBASE_API_URL+'/v2/accounts')
+    // this is blocked by coinbase cors, so it needs to be proxied.
+    superagent.get(process.env.NEXT_PUBLIC_COINBASE_API_URL + '/v2/accounts')
       .set("Authorization", token)
       .set("Accept", "application/json")
       // .set("Referer", "http://localhost:3000/")
@@ -46,54 +39,6 @@ function onLoggedIn(token){
 }
 
 export default function Home() {
-    const columns = React.useMemo(
-        () => [
-            {
-                Header: 'Out',
-                accessor: 'outAmount',
-            },
-            {
-                Header: 'Out Currency',
-                accessor: 'fromCurrency',
-                Cell: (table, cell) => {
-                    console.log(table, cell)
-                    // doesn't work because it updateMyData is needed here
-                    // return (<CurrencySelect  label={""}></CurrencySelect>)
-                    return(<span>{table.value}</span>)
-                }
-            },
-            {
-                Header: 'In',
-                accessor: 'inAmount',
-            },
-            {
-                Header: 'In Currency',
-                accessor: 'toCurrency',
-                Cell: (table, cell) => {
-                    console.log(table, cell)
-                    // doesn't work because it updateMyData is needed here
-                    // return (<CurrencySelect  label={""}></CurrencySelect>)
-                    return(<span>{table.value}</span>)
-                }
-            },
-            {
-                Header: "Fee",
-                accessor: 'fee',
-                Footer: info => {
-                    // Only calculate total visits if rows change
-                    const total = React.useMemo(
-                        () =>
-                            info.rows.reduce((sum, row) => row.values.fee + sum, 0),
-                        [info.rows]
-                    )
-
-                    return <>Total: {total}</>
-                },
-            }
-
-        ],
-        []
-    )
     const USD = "USD"
     const CoinLTC = "LTC"
     const CoinETH = "ETH"
@@ -102,56 +47,167 @@ export default function Home() {
     const defaultData = [
 
         {
-            key:0,
-            fromCurrency: USD,
-            toCurrency:   CoinETH,
-            outAmount:      500,
-            inAmount:       1.51862536,
-            fee:      7.34,
+            key: 0,
+            outCurrency: USD,
+            inCurrency: CoinETH,
+            outAmount: 500,
+            inAmount: 1.51862536,
+            fee: 7.34,
             feeCoin: USD,
         },
         {
-            key:1,
-            fromCurrency: USD,
-            toCurrency:   CoinLTC,
-            outAmount:      300,
-            inAmount:       5.60673567,
-            fee:      4.40,
+            key: 1,
+            outCurrency: USD,
+            inCurrency: CoinLTC,
+            outAmount: 300,
+            inAmount: 5.60673567,
+            fee: 4.40,
             feeCoin: USD,
         },
         {
-            key:2,
-            fromCurrency: CoinLTC,
-            toCurrency:   USD,
-            outAmount:      5.60673567,
-            inAmount:       293.80,
-            fee:      4.44,
-            feeCoin:  USD,
-        },
-        {
-            key:3,
-            fromCurrency: USD,
-            toCurrency:   CoinLINK,
-            outAmount:      500,
-            inAmount:       29.39195119,
-            fee:      7.34,
+            key: 2,
+            outCurrency: CoinLTC,
+            inCurrency: USD,
+            outAmount: 5.60673567,
+            inAmount: 293.80,
+            fee: 4.44,
             feeCoin: USD,
         },
         {
-            key:4,
-            fromCurrency: USD,
-            toCurrency:   CoinBTC,
-            outAmount:      293.80,
-            inAmount:       .02243376,
-            fee:      4.31,
+            key: 3,
+            outCurrency: USD,
+            inCurrency: CoinLINK,
+            outAmount: 500,
+            inAmount: 29.39195119,
+            fee: 7.34,
+            feeCoin: USD,
+        },
+        {
+            key: 4,
+            outCurrency: USD,
+            inCurrency: CoinBTC,
+            outAmount: 293.80,
+            inAmount: .02243376,
+            fee: 4.31,
             feeCoin: USD,
         },
     ]
-    // defaultData.push(...defaultData)
-    // defaultData.push(...defaultData)
 
     const [data, setData] = React.useState(React.useMemo(() => defaultData, []))
     const [skipPageReset, setSkipPageReset] = React.useState(false)
+    const [isTickerActive, setIsTickerActive] = React.useState(true);
+    const [marketRates, setMarketRates] = React.useState(initialMarketRates())
+    const [totalValue, setTotalValue] = React.useState(0)
+
+    const columns = React.useMemo(
+        () => [
+            {
+                Header: 'Out',
+                accessor: 'outAmount',
+                Cell: (table, cell) => {
+                    //should have precision of the currency
+                    return (<EditableNumericCell {...table} />)
+                },
+            },
+            {
+                Header: 'Out Currency',
+                accessor: 'outCurrency',
+                Cell: (table, cell) => {
+                    // console.log(table, cell)
+                    // doesn't work because it updateMyData is needed here
+                    // return (<CurrencySelect  label={""}></CurrencySelect>)
+                    return (<span>{table.value}</span>)
+                }
+            },
+            {
+                Header: 'In',
+                accessor: 'inAmount',
+                Cell: (table, cell) => {
+                    return (<EditableNumericCell {...table} />)
+                },
+            },
+            {
+                Header: 'In Currency',
+                accessor: 'inCurrency',
+                Cell: (table, cell) => {
+                    // console.log(table, cell)
+                    // doesn't work because it updateMyData is needed here
+                    // return (<CurrencySelect  label={""}></CurrencySelect>)
+                    return (<span>{table.value}</span>)
+                }
+            },
+            {
+                Header: "Fee",
+                accessor: 'fee',
+                Cell: (table, cell) => {
+                    return (<EditableNumericCell {...table} />)
+                },
+                Footer: info => {
+                    // Only calculate total visits if rows change
+                    const total = React.useMemo(
+                        // rows.value
+                        () =>
+                            info.rows.reduce((sum, row) => row.values.fee + sum, 0)
+                            // return computeMarketRate(trades, "USD", marketRates)
+                            // const trades = info.rows.map((i) => i.values)
+                        ,
+                        [info.rows]
+                    )
+
+                    return <>Total USD Value: ${total}</>
+                },
+            }
+
+        ],
+        []
+    )
+
+    // defaultData.push(...defaultData)
+    // defaultData.push(...defaultData)
+
+
+    React.useEffect(()=>{
+        setTotalValue(computeMarketRate(data, "USD", marketRates))
+    })
+    // start market rates ticker
+    React.useEffect(() => {
+
+        let interval = null;
+        if (isTickerActive) {
+            interval = setInterval(() => {
+                //get market rates
+                const merge = (outCurrency, newRates, existingRates) => {
+                    const newMarketRates = mergeRates(outCurrency, newRates, existingRates)
+                    setMarketRates(newMarketRates)
+                    setTotalValue(computeMarketRate(data, "USD", newMarketRates))
+                }
+
+                coinBase("USD", ({err, rates}) => {
+                    if (err) {
+                        console.error(err)
+                        console.error("stopping market rates ticker")
+                        setIsTickerActive(false)
+                    } else {
+                        // merge("USD", rates)
+                        const usdRates = rates
+                        coinBase("LTC", ({err, rates}) => {
+                            if (err) {
+                                console.error(err)
+                                console.error("stopping market rates ticker")
+                                setIsTickerActive(false)
+                            } else {
+                                merge("LTC", rates, usdRates)
+                            }
+                        })
+                    }
+                })
+
+            }, 3000);
+        } else if (!isTickerActive) {
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isTickerActive]);
 
     // We need to keep the table from resetting the pageIndex when we
     // Update data. So we can keep track of that flag with a ref.
@@ -173,7 +229,10 @@ export default function Home() {
                 return row
             })
         )
+        // setTotalValue((old)=>computeMarketRate(data, "USD", marketRates))
     }
+
+
 
   return (
     <div className={styles.container}>
@@ -212,7 +271,8 @@ export default function Home() {
         </LoggedIn>
 
 
-
+          <MarketRatesTicker rates={marketRates}/>
+            <p>Total Portfolio Value: {totalValue}</p>
 
 
         {/*<h1 className={styles.title}>*/}

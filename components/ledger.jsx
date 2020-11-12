@@ -55,8 +55,8 @@ export default function Ledger({children = (item, index) => <li key={index}>{`${
     const defaultData = [
         {
             id:"a",
-            fromCurrency:"USD",
-            toCurrency:"ETH",
+            outCurrency:"USD",
+            inCurrency:"ETH",
             outAmount:2000.0,
             inAmount:4.5,
             rate:4.5 // from / to amounts

@@ -22,10 +22,10 @@ import Select from '@material-ui/core/Select';
 import CurrencySelect from "./CurrencySelect";
 
 const initialData = {
-    fromCurrency: 'USD',
-    fromAmount: 0.0,
-    toCurrency: 'BTC',
-    toAmount: 0.0,
+    outCurrency: 'USD',
+    outAmount: 0.0,
+    inCurrency: 'BTC',
+    inAmount: 0.0,
     fee:0.0,
     feeCurrency:'USD',
     // status: 'single',
@@ -87,8 +87,9 @@ const AddTradeDialog = props => {
                     <DialogContentText>Demo add item to react table.</DialogContentText>
 
                     <CurrencySelect
-                        label={"From"}
-                        onChangeHandler={handleChange('fromCurrency')}
+                        label={"Out"}
+                        initialSelect={initialData.outCurrency}
+                        onChangeHandler={handleChange('outCurrency')}
                     />
 
                     {/*<TextField*/}
@@ -97,16 +98,16 @@ const AddTradeDialog = props => {
                     {/*    label="From Currency"*/}
                     {/*    type="text"*/}
                     {/*    fullWidth*/}
-                    {/*    value={trade.fromCurrency}*/}
-                    {/*    onChange={handleChange('fromCurrency')}*/}
+                    {/*    value={trade.outCurrency}*/}
+                    {/*    onChange={handleChange('outCurrency')}*/}
                     {/*/>*/}
                     <TextField
                         margin="dense"
-                        label="From Amount"
+                        label="Out Amount"
                         type="number"
                         fullWidth
-                        value={trade.fromAmount}
-                        onChange={handleChange('fromAmount')}
+                        value={trade.outAmount}
+                        onChange={handleChange('outAmount')}
                     />
                     {/*<TextField*/}
                     {/*    margin="dense"*/}
@@ -117,15 +118,16 @@ const AddTradeDialog = props => {
                     {/*    onChange={handleChange('toCurrency')}*/}
                     {/*/>*/}
                     <CurrencySelect
-                        label={"To"}
-                        onChangeHandler={handleChange('toCurrency')} />
+                        label={"In"}
+                        initialSelect={initialData.inCurrency}
+                        onChangeHandler={handleChange('inCurrency')} />
                     <TextField
                         margin="dense"
-                        label="To Amount"
+                        label="In Amount"
                         type="number"
                         fullWidth
-                        value={trade.toAmount}
-                        onChange={handleChange('toAmount')}
+                        value={trade.inAmount}
+                        onChange={handleChange('inAmount')}
                     />
 
                     <TextField
@@ -146,6 +148,7 @@ const AddTradeDialog = props => {
                     {/*/>*/}
                     <CurrencySelect
                         label={"Fee"}
+                        initialSelect={initialData.feeCurrency}
                         onChangeHandler={handleChange('feeCurrency')} />
 
                 </DialogContent>
