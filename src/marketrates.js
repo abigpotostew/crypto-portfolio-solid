@@ -3,13 +3,7 @@ import superagent from "superagent";
 export const coinBase = marketRatesCoinbase
 
 export function initialMarketRates() {
-    return {
-        get: (outC, inC) => {
-            if (outC === inC) {
-                return 1
-            } else return 0
-        }, data: {}
-    }
+    return parseCoinbaseRates({})
 }
 
 export function staticMarketRates(doubleMapToRate) {
@@ -33,7 +27,7 @@ export function staticMarketRates(doubleMapToRate) {
 export function mergeRates(outCurrency, newRates, existingRates) {
     const newData = Object.assign({}, existingRates.data);
     newData[outCurrency] = newRates.data[outCurrency]
-    const copy = Object.assign({}, existingRates);
+    const copy = Object.assign({}, newRates);
     copy.data = newData
     return copy
 }
@@ -51,8 +45,10 @@ function marketRatesCoinbase(outCurrency, callback){
                 } else {
                     if (res.statusCode === 200) {
                         //parse it
-                        const parsed=parseCoinbaseRates(outCurrency, res.body)
-                        return callback({err:undefined, rates:parsed})
+
+                        const parsed = parseCoinbaseRates({[outCurrency]: res.body.data.rates})
+                        //parseCoinbaseRates(outCurrency, res.body)
+                        return callback({err: undefined, rates: parsed})
                     } else {
                         const err = `Unexpected status ${res.statusCode} from ${url}, body: ${res.body}`
                         callback({err:err, rates:undefined})
@@ -62,19 +58,23 @@ function marketRatesCoinbase(outCurrency, callback){
         );
 }
 
+export function parseCoinbaseRates( data) {
+    return {
+        get: queryRates,
+        data: data
+    }
+}
+
 // with coinbase, look up the reverse rate (out -> in) and invert rate,
 // example if eth is 400 per usd, then fetch coinbase usd->eth which is
 // 0.0025 then return inverse 1/0.0025 = 400
-export function parseCoinbaseRates(outCurrency, {data: {rates}}){
-    return {
-        get:function(outCurrency, inCurrency) {
-            const rates = this.data[inCurrency]
-            if (outCurrency===inCurrency) return 1.0
-            if (!rates){
-                throw new Error("unsupported exchange rate: "+ outCurrency+ " to "+inCurrency)
-            }
-            return 1/rates[outCurrency]
-        },
-        data:{[outCurrency]:rates}
+const queryRates = function (outCurrency, inCurrency) {
+    if (outCurrency === inCurrency) return 1.0
+    const rates = this.data[inCurrency]
+    if (!rates) {
+        console.log(new Error("unsupported exchange rate: " + outCurrency + " to " + inCurrency))
+        // throw
+        return 0
     }
+    return 1 / rates[outCurrency]
 }
