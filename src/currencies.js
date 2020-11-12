@@ -1,13 +1,17 @@
-
+export const USD = "USD"
+export const CoinLTC = "LTC"
+export const CoinETH = "ETH"
+export const CoinLINK = "LINK"
+export const CoinBTC = "BTC"
 const cy = (tradeName, label)=>{ return {tradeName:tradeName, label:label}}
 export default function allCurrencies() {
     return [
         //todo precision
-        cy("ETH", "Ethereum"),
-        cy("LINK", "Chainlink"),
-        cy("LTC", "Litecoin"),
-        cy("BTC", "Bitcoin"),
-        cy("USD", "US Dollar")
+        cy(CoinETH, "Ethereum"),
+        cy(CoinLINK, "Chainlink"),
+        cy(CoinLTC, "Litecoin"),
+        cy(CoinBTC, "Bitcoin"),
+        cy(USD, "US Dollar")
     ]
 }
 

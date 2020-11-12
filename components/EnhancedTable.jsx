@@ -87,7 +87,7 @@ EditableCell.propTypes = {
         index: PropTypes.number.isRequired,
     }),
     column: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        id: PropTypes.string.isRequired,
     }),
     updateMyData: PropTypes.func.isRequired,
 }
@@ -142,7 +142,7 @@ EditableNumericCell.propTypes = {
         index: PropTypes.number.isRequired,
     }),
     column: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        id: PropTypes.string.isRequired,
     }),
     updateMyData: PropTypes.func.isRequired,
 }
@@ -302,12 +302,14 @@ const EnhancedTable = ({
                     ))}
                     <TableRow>
                         <TablePagination
-                            rowsPerPageOptions={[
-                                5,
-                                10,
-                                25,
-                                { label: 'All', value: data.length },
-                            ]}
+                            // rowsPerPageOptions={[
+                            //     {label: "5", value: 5, key:"5-pagination"},
+                            //     {label: "10", value: 10},
+                            //     {label: "25", value: 25},
+                            //     // 10,
+                            //     // 25,
+                            //     { label: 'All', value: data.length },
+                            // ]}
                             colSpan={3}
                             count={data.length}
                             rowsPerPage={pageSize}

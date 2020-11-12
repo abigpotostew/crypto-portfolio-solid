@@ -32,7 +32,7 @@ const CurrencySelect = props => {
             <InputLabel id="demo-simple-select-label">{label}</InputLabel>
             <Select
                 labelId="demo-simple-select-label"
-                id="demo-simple-select"
+                // id="demo-simple-select"
                 value={value}
                 onChange={handleChange}
             >

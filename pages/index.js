@@ -47,7 +47,7 @@ export default function Home() {
     const defaultData = [
 
         {
-            key: 0,
+            // key: 0,
             outCurrency: USD,
             inCurrency: CoinETH,
             outAmount: 500,
@@ -56,7 +56,7 @@ export default function Home() {
             feeCoin: USD,
         },
         {
-            key: 1,
+            // key: 1,
             outCurrency: USD,
             inCurrency: CoinLTC,
             outAmount: 300,
@@ -65,7 +65,7 @@ export default function Home() {
             feeCoin: USD,
         },
         {
-            key: 2,
+            // key: 2,
             outCurrency: CoinLTC,
             inCurrency: USD,
             outAmount: 5.60673567,
@@ -74,7 +74,7 @@ export default function Home() {
             feeCoin: USD,
         },
         {
-            key: 3,
+            // key: 3,
             outCurrency: USD,
             inCurrency: CoinLINK,
             outAmount: 500,
@@ -83,7 +83,7 @@ export default function Home() {
             feeCoin: USD,
         },
         {
-            key: 4,
+            // key: 4,
             outCurrency: USD,
             inCurrency: CoinBTC,
             outAmount: 293.80,

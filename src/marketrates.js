@@ -2,11 +2,35 @@ import superagent from "superagent";
 
 export const coinBase = marketRatesCoinbase
 
-export function initialMarketRates(){
-    return {get:()=>0.0, data:{}}
+export function initialMarketRates() {
+    return {
+        get: (outC, inC) => {
+            if (outC === inC) {
+                return 1
+            } else return 0
+        }, data: {}
+    }
 }
+
+export function staticMarketRates(doubleMapToRate) {
+    return {
+        get: (outC, inC) => {
+            if (outC === inC) {
+                return 1
+            }
+
+            const outMap = doubleMapToRate[outC]
+            if (outMap){
+                return outMap[inC] | 0
+            }
+            return 0
+        },
+        // data: doubleMapToRate
+    }
+}
+
 // merge new rates for out currency into existing reates. returns a copy
-export function mergeRates(outCurrency, newRates, existingRates){
+export function mergeRates(outCurrency, newRates, existingRates) {
     const newData = Object.assign({}, existingRates.data);
     newData[outCurrency] = newRates.data[outCurrency]
     const copy = Object.assign({}, existingRates);
@@ -38,11 +62,10 @@ function marketRatesCoinbase(outCurrency, callback){
         );
 }
 
-function parseCoinbaseRates(outCurrency, {data: {rates}}){
-    // const parsed = JSON.parse(body)
-    // const {data: {rates}} = parsed
-
-    //only supports USD right now
+// with coinbase, look up the reverse rate (out -> in) and invert rate,
+// example if eth is 400 per usd, then fetch coinbase usd->eth which is
+// 0.0025 then return inverse 1/0.0025 = 400
+export function parseCoinbaseRates(outCurrency, {data: {rates}}){
     return {
         get:function(outCurrency, inCurrency) {
             const rates = this.data[inCurrency]
@@ -51,7 +74,6 @@ function parseCoinbaseRates(outCurrency, {data: {rates}}){
                 throw new Error("unsupported exchange rate: "+ outCurrency+ " to "+inCurrency)
             }
             return 1/rates[outCurrency]
-            // return 1/rates[inCurrency]
         },
         data:{[outCurrency]:rates}
     }

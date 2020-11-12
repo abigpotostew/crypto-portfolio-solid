@@ -10,12 +10,12 @@ export default function computeMarketRate(tradesList, destCurrency, marketRates)
         totals[outCurrency] = outCurrent - outAmount
         totals[inCurrency] = inCurrent + inAmount
         if (fee > 0) {
-            let feeCoin = feeCoin
+            let feeCoinResolved = feeCoin
             if (!validCurrency(feeCoin)) {
-                feeCoin = outCurrency
+                feeCoinResolved = outCurrency
             }
-            const currFeeCoin = totals[feeCoin] | 0
-            totals[feeCoin] = currFeeCoin - fee
+            const currFeeCoin = totals[feeCoinResolved] | 0
+            totals[feeCoinResolved] = currFeeCoin - fee
         }
     }
 

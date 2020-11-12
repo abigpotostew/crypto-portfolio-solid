@@ -11,6 +11,6 @@ export default function MarketRatesTicker({rates}) {
 
     // assume USD
     return (
-        <p>${rates.get("ETH","USD")}</p>
+        <p>${rates.get("ETH","USD")} / ETH</p>
     )
 }
