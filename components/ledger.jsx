@@ -1,66 +1,13 @@
-// import {useContainer, useWebId} from "swrlit";
 import React from "react"
-import { useTable } from 'react-table'
-import CssBaseline from '@material-ui/core/CssBaseline'
-import MaUTable from '@material-ui/core/Table'
-import TableBody from '@material-ui/core/TableBody'
-import TableCell from '@material-ui/core/TableCell'
-import TableHead from '@material-ui/core/TableHead'
-import TableRow from '@material-ui/core/TableRow'
+
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
-import MarketRatesTicker from "./marketRates";
-import {coinBase, initialMarketRates, mergeRates} from "../src/marketrates";
 import computeMarketRate from "../src/compute";
 
-import {
-    useWebId, useAuthentication,
-    useMyProfile, useProfile,
-    useEnsured, useContainer,
-    useThing
-} from 'swrlit'
-import {
-    createSolidDataset, saveSolidDatasetInContainer,
-    setThing, createThing, asUrl,
-    getUrl, getUrlAll, addUrl,
-    getStringNoLocale, setStringNoLocale,
-    getDatetime, setDatetime
-} from '@inrupt/solid-client'
-import { WS } from '@inrupt/vocab-solid-common'
-import { VCARD, FOAF, RDF, RDFS } from '@inrupt/vocab-common-rdf'
+export default function Ledger({marketRates}) {
 
- function useStorageContainer(webId) {
-    const { profile } = useProfile(webId)
-    return profile && getUrl(profile, WS.storage)
-}
-
- function useLedgerContainerUri(webId, path = 'public') {
-    const storageContainer = useStorageContainer(webId)
-    return useEnsured(storageContainer && `${storageContainer}${path}/cryptoledger/`)
-}
-
-const cryptledgerNs = "https://stewartbracken.club/v/cryptoledger#"
-const LEDGER = {
-    Ledger: `${cryptledgerNs}Ledger`,
-    Trade: `${cryptledgerNs}Trade`,
-    trades: `${cryptledgerNs}trades`
-}
-
-export default function Ledger(props) {
-
-    const myWebId = useWebId()
-    const ledgerContainerUri = useLedgerContainerUri(myWebId, 'private')
-    const { resources: ledgers, mutate: mutateLedgers } = useContainer(ledgerContainerUri)
-
-    const createLedger = async ({ name = "Cryptocurrency Ledger"}) => {
-        var ledger = createThing({ name: 'ledger' });
-        ledger = addUrl(ledger, RDF.type, LEDGER.Ledger)
-        ledger = setStringNoLocale(ledger, RDFS.label, name)
-        var dataset = createSolidDataset()
-        dataset = setThing(dataset, ledger)
-        await saveSolidDatasetInContainer(ledgerContainerUri, dataset, { slugSuggestion: name })
-        mutateLedgers()
-    }
-    //get ledger if it exist
+    // const author = 'https://ruben.verborgh.org/profile/#me'
+    // const expression = `[${author}].blog[schema:blogPost].label`;
+    // const [postsLD, pendingLD, errorLD] = useLDflex(expression, true);
 
 
     const USD = "USD"
@@ -119,8 +66,7 @@ export default function Ledger(props) {
 
     const [data, setData] = React.useState(React.useMemo(() => defaultData, []))
     const [skipPageReset, setSkipPageReset] = React.useState(false)
-    const [isTickerActive, setIsTickerActive] = React.useState(true);
-    const [marketRates, setMarketRates] = React.useState(initialMarketRates())
+
     const [totalValue, setTotalValue] = React.useState(0)
 
     const columns = React.useMemo(
@@ -186,61 +132,10 @@ export default function Ledger(props) {
         []
     )
 
-
-
     React.useEffect(()=>{
-        // do stuff here...
-        getMarketRates()
-    }, []) // <-- empty dependency array
-
-    React.useEffect(()=>{
-        //todo use loader for market rate total value
         setTotalValue(computeMarketRate(data, "USD", marketRates))
     }, [marketRates])
 
-    const getMarketRates = ()=>{
-        const merge = (outCurrency, newRates, existingRates) => {
-            const newMarketRates = mergeRates(outCurrency, newRates, existingRates)
-            setMarketRates(newMarketRates)
-            // setTotalValue(computeMarketRate(data, "USD", newMarketRates))
-        }
-
-        coinBase("USD", ({err, rates}) => {
-            if (err) {
-                console.error(err)
-                console.error("stopping market rates ticker")
-                setIsTickerActive(false)
-            } else {
-                merge("USD", rates, marketRates)
-                // const usdRates = rates
-                // merge("LTC", rates, marketRates)
-                // coinBase("LTC", ({err, rates}) => {
-                //     if (err) {
-                //         console.error(err)
-                //         console.error("stopping market rates ticker")
-                //         setIsTickerActive(false)
-                //     } else {
-                //         merge("LTC", rates, usdRates)
-                //     }
-                // })
-            }
-        })
-    }
-
-    // start market rates ticker
-    React.useEffect(() => {
-
-        let interval = null;
-        if (isTickerActive) {
-            interval = setInterval(() => {
-                //get market rates
-                getMarketRates()
-            }, 3000); ///todo make a call out in an effect
-        } else if (!isTickerActive) {
-            clearInterval(interval);
-        }
-        return () => clearInterval(interval);
-    }, [isTickerActive]);
 
     // We need to keep the table from resetting the pageIndex when we
     // Update data. So we can keep track of that flag with a ref.
@@ -262,7 +157,6 @@ export default function Ledger(props) {
                 return row
             })
         )
-        // setTotalValue((old)=>computeMarketRate(data, "USD", marketRates))
     }
 
     return (<div>
@@ -273,9 +167,8 @@ export default function Ledger(props) {
             updateMyData={updateMyData}
             skipPageReset={skipPageReset}
         />
-        <MarketRatesTicker rates={marketRates}/>
+
         <p>Total Portfolio Value: {totalValue}</p>
-        <p> you have {ledgers && ledgers.length || 0} ledgers</p>
     </div>)
 
 }

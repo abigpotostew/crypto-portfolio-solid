@@ -1,49 +1,60 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
-import {AuthButton, Link, LoggedIn, LoggedOut, Value} from "@solid/react"
-import EnhancedTable, {EditableNumericCell} from "../components/EnhancedTable";
-
 import React from "react";
-import MarketRatesTicker from "../components/marketRates";
-import {coinBase, initialMarketRates, mergeRates} from "../src/marketrates";
-import computeMarketRate from "../src/compute";
-import Ledger from "../components/ledger";
+import {useWebId,useAuthentication} from 'swrlit'
+import Ledgers from "../components/Ledgers";
 
-
+export function AuthButtonNew() {
+    const { popupLogin, logout } = useAuthentication()
+    const webId = useWebId()
+    if (webId === undefined) {
+        return <div>loading...</div>
+    } else
+        if (webId === null) {
+        return (
+            <button onClick={() => popupLogin({ popupUri: "/popup.html" })}>
+                log in
+            </button>
+        )
+    } else {
+        return <button onClick={() => logout()}>log out</button>
+    }
+}
 export default function Home() {
+    const myWebId = useWebId()
 
+    return (
 
-
-
-  return (
     <div className={styles.container}>
       <Head>
         <title>Create Next App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-
-
       <main className={styles.main}>
 
 
-        <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
-        <LoggedOut>
-          <p>You are not logged in, and this is a members-only area!</p>
-        </LoggedOut>
-        <LoggedIn>
-          <p>You are logged in and can see the special content.</p>
+          <AuthButtonNew />
+          <p>{myWebId}</p>
+          {myWebId?<Ledgers /> : <p>you're logged out</p>}
 
-            <p>Welcome back, <Value src="user.firstName"/></p>
-            {/*<Image src="user.image" defaultSrc="profile.svg" className="pic"/>*/}
-            <ul>
-                <li><Link href="user.inbox">Your inbox</Link></li>
-                <li><Link href="user.homepage">Your homepage</Link></li>
-            </ul>
+        {/*<AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>*/}
+        {/*<LoggedOut>*/}
+        {/*  <p>You are not logged in, and this is a members-only area!</p>*/}
+        {/*</LoggedOut>*/}
+        {/*<LoggedIn>*/}
+        {/*  <p>You are logged in and can see the special content.</p>*/}
 
-            <Ledger />
+        {/*    <p>Welcome back, <Value src="user.firstName"/></p>*/}
+        {/*    /!*<Image src="user.image" defaultSrc="profile.svg" className="pic"/>*!/*/}
+        {/*    <ul>*/}
+        {/*        <li><Link href="user.inbox">Your inbox</Link></li>*/}
+        {/*        <li><Link href="user.homepage">Your homepage</Link></li>*/}
+        {/*    </ul>*/}
 
-        </LoggedIn>
+        {/*    <Ledger />*/}
+
+        {/*</LoggedIn>*/}
 
 
 
@@ -70,6 +81,7 @@ export default function Home() {
         {/*    </p>*/}
         {/*  </a>*/}
         {/*</div>*/}
+
       </main>
 
       {/*<footer className={styles.footer}>*/}
@@ -82,6 +94,8 @@ export default function Home() {
       {/*    <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />*/}
       {/*  </a>*/}
       {/*</footer>*/}
+
+
     </div>
   )
 }
