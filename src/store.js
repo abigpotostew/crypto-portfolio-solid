@@ -1,4 +1,10 @@
 import {
+    useWebId, useAuthentication,
+    useMyProfile, useProfile,
+    useEnsured, useContainer,
+    useThing
+} from 'swrlit'
+import {
     createSolidDataset, saveSolidDatasetInContainer,
     setThing, createThing, asUrl,
     getUrl, getUrlAll, addUrl,
@@ -8,7 +14,7 @@ import {
 import {WS} from '@inrupt/vocab-solid-common'
 import {RDF, RDFS} from '@inrupt/vocab-common-rdf'
 
-import { useEnsured, useProfile} from 'swrlit'
+import { schema } from 'rdf-namespaces';
 
 
 const cryptledgerNs = "https://stewartbracken.club/v/cryptoledger#"
@@ -26,6 +32,7 @@ export function useLedgerContainerUri(webId, path = 'public') {
 export async function deleteLedger(ledger, ledgerContainerUri, mutateLedgers){
 
     await deleteSolidDataset(asUrl(ledger))
+    mutateLedgers()
 }
 
 export async function createLedger ({ name = "Cryptocurrency Ledger"},  ledgerContainerUri, mutateLedgers)  {
@@ -45,4 +52,41 @@ function useStorageContainer(webId) {
 
 export function ttlFiles(resource) {
     return asUrl(resource).endsWith(".ttl")
+}
+
+export function getRows(ledgerUrl){
+    //trades in ledger
+    const url = asUrl(ledgerUrl)
+    const { thing: ledger, save, resource, saveResource } = useThing(`${url}#ledger`)
+    const name = ledger && getStringNoLocale(ledger, RDFS.label)
+    const trades = ledger && getUrlAll(ledger, LedgerType.trades)
+
+    if (trades){
+        //loop
+        // trade
+        //{trades && trades.map(trade => <Entry key={entry} entryUri={entry}/>)}
+        return {trades:trades, resource:resource, saveResource:saveResource}
+        // const { thing: entry, save } = useThing(entryUri)
+        // const description = getStringNoLocale(entry, RDFS.comment)
+        // const start = getDatetime(entry, schema.startTime)
+        // const end = getDatetime(entry, schema.endTime)
+    }else{
+        //return pending
+        return {}
+    }
+}
+
+export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
+    var trade = createThing();
+    trade = addUrl(trade, RDF.type, LedgerType.Trade)
+    //todo set all the trade fields here
+    trade = setStringNoLocale(trade, RDFS.comment, "HELLO WORLD")
+    // trade = setDatetime(trade, schema.startTime, startMoment.toDate())
+    // trade = setDatetime(trade, schema.endTime, endMoment.toDate())
+
+    var newLedger = addUrl(ledger, LedgerType.trades, trade)
+    var newResource = setThing(ledgerResource, newLedger)
+    newResource = setThing(newResource, trade)
+    await saveResource(newResource)
+    // setDescription("")
 }

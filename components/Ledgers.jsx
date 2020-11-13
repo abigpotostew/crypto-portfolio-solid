@@ -1,5 +1,5 @@
 import {coinBase, initialMarketRates, mergeRates} from "../src/marketrates";
-import {createLedger, useLedgerContainerUri, ttlFiles, deleteLedger} from "../src/store";
+import {createLedger, useLedgerContainerUri, ttlFiles, deleteLedger, getRows, createTradeRow} from "../src/store";
 import {
     useWebId, useAuthentication,
     useMyProfile, useProfile,
@@ -15,12 +15,24 @@ import Button from "@material-ui/core/Button"
 
 function LedgerManage({ledger}){
 
-    const handleDelete = () =>{
-        deleteLedger(ledger)
+    const {trades,resource:ledgerResource, saveResource} = getRows(ledger)
+
+    const handleDelete = async () =>{
+        await deleteLedger(ledger)
     }
+    const createTradeRowHandler =  async () => {
+        await createTradeRow({ledger: ledger, ledgerResource: ledgerResource, saveResource: saveResource})
+    }
+
     return (
         <div>
             <p>{asUrl(ledger)}</p>
+            <p>You have {trades && trades.length} trades</p>
+            <ul>
+                {trades && trades.map( trade => <li key={trade}>{trade}</li>)}
+            </ul>
+
+            <Button onClick={createTradeRowHandler}>Add Row</Button>
             <Button onClick={handleDelete}>Delete Ledger</Button>
         </div>
     )
