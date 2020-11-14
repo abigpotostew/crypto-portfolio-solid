@@ -102,18 +102,22 @@ export const EditableNumericCell = ({
     // We need to keep and update the state of the cell normally
     const [value, setValue] = React.useState(initialValue)
 
+    const doParseValue = (s) =>{
+        let v = parseFloat(s)
+        if (isNaN(v)){
+            v = 0.0
+        }
+        return v
+    }
+
     const onChange = e => {
         setValue(e.target.value)
     }
 
     // We'll only update the external data when the input is blurred
     const onBlur = () => {
-        let parsedValue = parseFloat(value)
-        if (isNaN(parsedValue)){
-            //todo alert or something--show error
-            console.log("value ", value, " is not a float")
-            parsedValue = 0.0
-        }
+        let parsedValue = doParseValue(value)
+
         //set it to the parsed numeric
         setValue(parsedValue)
         updateMyData(index, id, parsedValue)
@@ -124,6 +128,17 @@ export const EditableNumericCell = ({
         setValue(initialValue)
     }, [initialValue])
 
+    //todo use material ui //textfield
+    /**
+     * <TextField
+     id="standard-number"
+     label="Number"
+     type="number"
+     InputLabelProps={{
+            shrink: true,
+          }}
+     />
+     */
     return (
         <input
             style={inputStyle}

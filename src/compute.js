@@ -5,16 +5,16 @@ export default function computeMarketRate(tradesList, destCurrency, marketRates)
 
     for (let i =0;i<tradesList.length;++i){
         const {outAmount, outCurrency, inAmount, inCurrency, fee, feeCoin} = tradesList[i]
-        const outCurrent = totals[outCurrency] | 0
-        const inCurrent = totals[inCurrency] | 0
+        const outCurrent = totals[outCurrency] || 0
         totals[outCurrency] = outCurrent - outAmount
+        const inCurrent = totals[inCurrency] || 0
         totals[inCurrency] = inCurrent + inAmount
         if (fee > 0) {
             let feeCoinResolved = feeCoin
             if (!validCurrency(feeCoin)) {
                 feeCoinResolved = outCurrency
             }
-            const currFeeCoin = totals[feeCoinResolved] | 0
+            const currFeeCoin = totals[feeCoinResolved] || 0
             totals[feeCoinResolved] = currFeeCoin - fee
         }
     }

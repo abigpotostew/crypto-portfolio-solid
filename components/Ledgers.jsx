@@ -1,4 +1,4 @@
-import {coinBase, initialMarketRates, mergeRates} from "../src/marketrates";
+import {coinBase, coinGecko, initialMarketRates, mergeRates} from "../src/marketrates";
 import {createLedger, useLedgerContainerUri, ttlFiles, deleteLedger, getRows, createTradeRow} from "../src/store";
 import {
     useWebId, useAuthentication,
@@ -15,13 +15,13 @@ import Button from "@material-ui/core/Button"
 
 function LedgerManage({ledger}){
 
-    const {trades,resource:ledgerResource, saveResource} = getRows(ledger)
+    const {trades, resource:ledgerResource, saveResource, ledgerThing} = getRows(ledger)
 
     const handleDelete = async () =>{
         await deleteLedger(ledger)
     }
     const createTradeRowHandler =  async () => {
-        await createTradeRow({ledger: ledger, ledgerResource: ledgerResource, saveResource: saveResource})
+        await createTradeRow({ledger: ledgerThing, ledgerResource: ledgerResource, saveResource: saveResource})
     }
 
     return (
@@ -43,8 +43,21 @@ export default function Ledgers(){
 
     const myWebId = useWebId()
 
-    const [isTickerActive, setIsTickerActive] = React.useState(true);
+    const [isTickerActive, setIsTickerActive] = React.useState(false);
     const [marketRates, setMarketRates] = React.useState(initialMarketRates())
+
+    const getMarketRates = ()=>{
+        coinGecko("USD", ({err, rates}) => {
+            if (err) {
+                console.error(err)
+                console.error("stopping market rates ticker")
+                setIsTickerActive(false)
+            } else {
+                setMarketRates(rates)
+                //coinbase requires merge
+            }
+        }, marketRates)
+    }
 
     // start market rates ticker
     React.useEffect(() => {
@@ -60,24 +73,6 @@ export default function Ledgers(){
         }
         return () => clearInterval(interval);
     }, [isTickerActive]);
-
-    const getMarketRates = ()=>{
-        const merge = (outCurrency, newRates, existingRates) => {
-            const newMarketRates = mergeRates(outCurrency, newRates, existingRates)
-            setMarketRates(newMarketRates)
-            // setTotalValue(computeMarketRate(data, "USD", newMarketRates))
-        }
-
-        coinBase("USD", ({err, rates}) => {
-            if (err) {
-                console.error(err)
-                console.error("stopping market rates ticker")
-                setIsTickerActive(false)
-            } else {
-                merge("USD", rates, marketRates)
-            }
-        })
-    }
     // initial market rates query
     React.useEffect(()=>{
         // do stuff here...

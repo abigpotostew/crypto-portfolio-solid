@@ -2,19 +2,17 @@ import React from "react"
 
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
+import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
 
 export default function Ledger({marketRates}) {
 
-    // const author = 'https://ruben.verborgh.org/profile/#me'
-    // const expression = `[${author}].blog[schema:blogPost].label`;
-    // const [postsLD, pendingLD, errorLD] = useLDflex(expression, true);
+    // const USD = USD
+    // const CoinLTC = CoinLTC
+    // const CoinETH = CoinETH
+    // const CoinLINK = CoinLINK
+    // const CoinBTC = CoinBTC
 
-
-    const USD = "USD"
-    const CoinLTC = "LTC"
-    const CoinETH = "ETH"
-    const CoinLINK = "LINK"
-    const CoinBTC = "BTC"
+    //todo update calculation when data changes
     const defaultData = [
 
         {
@@ -32,7 +30,7 @@ export default function Ledger({marketRates}) {
             inCurrency: CoinLTC,
             outAmount: 300,
             inAmount: 5.60673567,
-            fee: 4.40,
+            fee: 4.4,
             feeCoin: USD,
         },
         {
@@ -54,12 +52,54 @@ export default function Ledger({marketRates}) {
             feeCoin: USD,
         },
         {
-            // key: 4,
             outCurrency: USD,
             inCurrency: CoinBTC,
             outAmount: 293.80,
             inAmount: .02243376,
             fee: 4.31,
+            feeCoin: USD,
+        },
+        {
+            outCurrency: USD,
+            inCurrency: CoinETH,
+            outAmount: 2000,
+            inAmount: 4.4766919,
+            fee: 29.36,
+            feeCoin: USD,
+        },
+
+        {//metamask
+            outCurrency: CoinETH,
+            inCurrency: CoinETH,
+            outAmount: 2.539396,
+            inAmount: 2.538955,
+            fee: 0,
+            feeCoin: CoinETH,
+        },
+
+        {
+            outCurrency: CoinETH,
+            inCurrency: CoinETH,
+            outAmount: 1.14074601,
+            inAmount:  1.140305,
+            fee: 0.00044100,
+            feeCoin: CoinETH,
+        },
+        {
+            outCurrency: CoinETH,
+            inCurrency: CoinPRQ,
+            outAmount: 3.65,
+            inAmount: 10072.693,
+            fee: 0.002032,
+            feeCoin: CoinETH,
+        },
+        {
+            //kraken wire. leaving out deposit amount now since it would be counted as a profit
+            outCurrency: USD,
+            inCurrency: USD,
+            outAmount: 0,
+            inAmount: 0,
+            fee: 20,
             feeCoin: USD,
         },
     ]
@@ -146,6 +186,7 @@ export default function Ledger({marketRates}) {
     const updateMyData = (rowIndex, columnId, value) => {
         // We also turn on the flag to not reset the page
         setSkipPageReset(true)
+        console.log("my data is updated")
         setData(old =>
             old.map((row, index) => {
                 if (index === rowIndex) {
@@ -157,6 +198,7 @@ export default function Ledger({marketRates}) {
                 return row
             })
         )
+        setTotalValue(computeMarketRate(data, "USD", marketRates))
     }
 
     return (<div>

@@ -1,26 +1,11 @@
 import superagent from "superagent";
+import {allCoins} from "./currencies";
 
 export const coinBase = marketRatesCoinbase
+export const coinGecko = marketRatesCoinGecko
 
 export function initialMarketRates() {
     return parseCoinbaseRates({})
-}
-
-export function staticMarketRates(doubleMapToRate) {
-    return {
-        get: (outC, inC) => {
-            if (outC === inC) {
-                return 1
-            }
-
-            const outMap = doubleMapToRate[outC]
-            if (outMap){
-                return outMap[inC] | 0
-            }
-            return 0
-        },
-        // data: doubleMapToRate
-    }
 }
 
 // merge new rates for out currency into existing reates. returns a copy
@@ -78,3 +63,95 @@ const queryRates = function (outCurrency, inCurrency) {
     }
     return 1 / rates[outCurrency]
 }
+
+//callback gets {err,rates}
+function marketRatesCoinGecko(outCurrency, callback, existing) {
+    //parsiq,ethereum,bitcoin,chainlink,litecoin
+
+    getCoinGeckoIds(({err, idMap}) => {
+        const ids = allCoins()
+            .map((c) => c.tradeName)
+            .map((c) => c.toLowerCase())
+            .map((c) => idMap[c])
+
+        const vsCurrency = outCurrency.toLowerCase()
+        const idsString = ids.join(",")
+        const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${vsCurrency}&ids=${idsString}`
+        superagent.get(url)
+            .set("Accept", "application/json")
+            .end((err, res) => {
+                    // Calling the end function will send the request
+                    if (err) {
+                        return callback(err)
+                    } else {
+                        if (res.statusCode === 200) {
+                            //parse it
+
+                            const forUsd = new Map()
+                            for(var i=0;i<res.body.length;++i){
+                                const market =res.body[i]
+                                const avg = (market.high_24h + market.low_24h)/2
+                                forUsd[market.symbol] = avg
+                            }
+
+                           const rates= {
+                                get:(outC, inC)=>{
+                                    if (outC===inC) return 1.0
+                                    return forUsd[outC.toLowerCase()]
+                                },
+                                idMap:idMap
+                            }
+
+                            return callback({err: undefined, rates: rates})
+                        } else {
+                            const err = `Unexpected status ${res.statusCode} from ${url}, body: ${res.body}`
+                            return callback({err: err, rates: undefined})
+                        }
+                    }
+                }
+            );
+
+    }, existing)
+}
+
+function getCoinGeckoIds(callback, existing) {
+    const listIds = 'https://api.coingecko.com/api/v3/coins/list'
+
+    if (existing && existing.idMap) {
+        return callback({err: undefined, idMap: existing.idMap})
+    }
+
+    superagent.get(listIds)
+        .set("Accept", "application/json")
+        .end((err, res) => {
+                // Calling the end function will send the request
+                if (err) {
+                    return callback(err)
+                } else {
+                    if (res.statusCode === 200) {
+                        //parse it
+
+                        const idMap = new Map()
+                        for (var i = 0; i < res.body.length; ++i) {
+                            idMap[res.body[i].symbol] = res.body[i].id
+                        }
+
+                        callback({err: undefined, idMap: idMap})
+                    } else {
+                        const err = `Unexpected status ${res.statusCode} from ${url}, body: ${res.body}`
+                        callback({err: err, idMap: undefined})
+                    }
+                }
+            }
+        );
+}
+
+// function initialMarketRatesCoinGecko(outCurrency, callback) {
+//
+//     getCoinGeckoIds(({err, idMap}) => {
+//         if (err) {
+//             throw new Error(err)
+//         }
+//
+//     })
+// }
