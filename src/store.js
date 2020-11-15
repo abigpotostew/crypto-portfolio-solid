@@ -63,7 +63,7 @@ export function ttlFiles(resource) {
 }
 
 
-export function getTrade(url, idx, setData) {
+export function getTrade(url) {
     // return tradeUrl
     const {thing: tradeThing} = url&&useThing(`${url}`)
     // const name = tradeThing && getStringNoLocale(tradeThing, RDFS.label)
@@ -81,22 +81,6 @@ export function getTrade(url, idx, setData) {
     const {currency: inCurrency, amount: inAmount} = getAmount(LedgerType.inAmount)
     const {currency: feeCurrency, amount: feeAmount} = getAmount(LedgerType.feeAmount)
 
-    if (tradeThing){
-        //set data
-        const t = newTrade({
-            outCurrency:outCurrency,
-            outAmount:outAmount,
-            inCurrency:inCurrency,
-            inAmount:inAmount,
-            feeCurrency:feeCurrency,
-            feeAmount:feeAmount,
-            url:url
-        })
-        setData(old=> old.concat(t))
-    }else{
-//the thing
-    }
-
     return newTrade({
         outCurrency:outCurrency,
         outAmount:outAmount,
@@ -104,14 +88,11 @@ export function getTrade(url, idx, setData) {
         inAmount:inAmount,
         feeCurrency:feeCurrency,
         feeAmount:feeAmount,
-        url:url
+        url:tradeUrl
     })
 }
 
 export function getRows(ledgerObject) {
-    if (!ledgerObject){
-        return {}
-    }
     //trades in ledger
     const url = asUrl(ledgerObject)
     // getThing(url)
@@ -128,15 +109,8 @@ export function getRows(ledgerObject) {
         // const description = getStringNoLocale(entry, RDFS.comment)
         // const start = getDatetime(entry, schema.startTime)
         // const end = getDatetime(entry, schema.endTime)
-        // setData(old=>{
-        //
-        // })
     } else {
         //return pending
-        // return {}
-        // setData((old)=>{
-        //     return old
-        // })
         return {}
     }
 }
