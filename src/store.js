@@ -12,7 +12,8 @@ import {
     setDatetime,
     setDecimal,
     setStringNoLocale,
-    setThing
+    setThing,
+    getThing
 } from '@itme/solid-client'
 import {WS} from '@inrupt/vocab-solid-common'
 import {RDF, RDFS} from '@inrupt/vocab-common-rdf'
@@ -62,10 +63,9 @@ export function ttlFiles(resource) {
 }
 
 
-export function getTrade(tradeUrl) {
+export function getTrade(url) {
     // return tradeUrl
-    const url = tradeUrl
-    const {thing: tradeThing} = useThing(`${url}`)
+    const {thing: tradeThing} = url&&useThing(`${url}`)
     // const name = tradeThing && getStringNoLocale(tradeThing, RDFS.label)
 
     const getAmount = (typeRef) => {
@@ -95,7 +95,8 @@ export function getTrade(tradeUrl) {
 export function getRows(ledgerObject) {
     //trades in ledger
     const url = asUrl(ledgerObject)
-    const {thing: ledgerThing, save, resource, saveResource} = useThing(`${url}#ledger`)
+    // getThing(url)
+    const {thing: ledgerThing, save, resource, saveResource} = ledgerObject && useThing(`${url}#ledger`)
     const name = ledgerThing && getStringNoLocale(ledgerThing, RDFS.label)
     const trades = ledgerThing && getUrlAll(ledgerThing, LedgerType.trades)
 
