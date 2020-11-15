@@ -13,13 +13,48 @@ export default function Ledger({marketRates, ledgerStoreRef}) {
     // const CoinLINK = CoinLINK
     // const CoinBTC = CoinBTC
 
-    const {trades, resource: ledgerResource, saveResource, ledgerThing} = ledgerStoreRef && getRows(ledgerStoreRef)
-    let tradeData = [];
-    if (trades){
-        tradeData = trades.map(getTrade)
+// have the getRows func call updateMyData
+
+    const defaultData = []
+
+    const [totalValue, setTotalValue] = React.useState(0)
+    const [data, setData] = React.useState(React.useMemo(() => defaultData, []))
+    const [skipPageReset, setSkipPageReset] = React.useState(false)
+
+    // We need to keep the table from resetting the pageIndex when we
+    // Update data. So we can keep track of that flag with a ref.
+
+    // When our cell renderer calls updateMyData, we'll use
+    // the rowIndex, columnId and new value to update the
+    // original data
+    const updateMyData = (rowIndex, columnId, value) => {
+        // We also turn on the flag to not reset the page
+        setSkipPageReset(true)
+        // console.log("my data is updated")
+        setData(old =>
+            old.map((row, index) => {
+                if (index === rowIndex) {
+                    //
+                    return {
+                        ...old[rowIndex],
+                        [columnId]: value,
+                    }
+                }
+                return row
+            })
+        )
+        setTotalValue(computeMarketRate(data, "USD", marketRates))
     }
 
-    const defaultData=tradeData
+    //todo this needs to just get data straight up using a single hook, not many from swrlit
+
+    const {trades, resource: ledgerResource, saveResource, ledgerThing} = getRows(ledgerStoreRef)
+    let tradeData = [];
+    if (trades){
+        trades.map((t, i) => getTrade(t, i, setData))
+    }
+
+    // const defaultData=tradeData
 
     //todo update calculation when data changes
     const defaultDataStatic =
@@ -114,10 +149,7 @@ export default function Ledger({marketRates, ledgerStoreRef}) {
         }),
     ]
 
-    const [data, setData] = React.useState(React.useMemo(() => defaultData, []))
-    const [skipPageReset, setSkipPageReset] = React.useState(false)
 
-    const [totalValue, setTotalValue] = React.useState(0)
 
     const columns = React.useMemo(
         () => [
@@ -186,31 +218,6 @@ export default function Ledger({marketRates, ledgerStoreRef}) {
         setTotalValue(computeMarketRate(data, "USD", marketRates))
     }, [marketRates])
 
-
-    // We need to keep the table from resetting the pageIndex when we
-    // Update data. So we can keep track of that flag with a ref.
-
-    // When our cell renderer calls updateMyData, we'll use
-    // the rowIndex, columnId and new value to update the
-    // original data
-    const updateMyData = (rowIndex, columnId, value) => {
-        // We also turn on the flag to not reset the page
-        setSkipPageReset(true)
-        // console.log("my data is updated")
-        setData(old =>
-            old.map((row, index) => {
-                if (index === rowIndex) {
-                    //
-                    return {
-                        ...old[rowIndex],
-                        [columnId]: value,
-                    }
-                }
-                return row
-            })
-        )
-        setTotalValue(computeMarketRate(data, "USD", marketRates))
-    }
 
     return (<div>
         <EnhancedTable
