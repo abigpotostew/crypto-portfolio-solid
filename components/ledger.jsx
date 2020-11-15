@@ -3,9 +3,9 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
-import {getRows, getTrade, newTrade} from "../src/store";
+import {newTrade} from "../src/store";
 
-export default function Ledger({marketRates, ledgerStoreRef}) {
+export default function Ledger({marketRates}) {
 
     // const USD = USD
     // const CoinLTC = CoinLTC
@@ -13,17 +13,8 @@ export default function Ledger({marketRates, ledgerStoreRef}) {
     // const CoinLINK = CoinLINK
     // const CoinBTC = CoinBTC
 
-    const {trades, resource: ledgerResource, saveResource, ledgerThing} = ledgerStoreRef && getRows(ledgerStoreRef)
-    let tradeData = [];
-    if (trades){
-        tradeData = trades.map(getTrade)
-    }
-
-    const defaultData=tradeData
-
     //todo update calculation when data changes
-    const defaultDataStatic =
-        [
+    const defaultData = [
 
         newTrade({
             // key: 0,
@@ -196,11 +187,10 @@ export default function Ledger({marketRates, ledgerStoreRef}) {
     const updateMyData = (rowIndex, columnId, value) => {
         // We also turn on the flag to not reset the page
         setSkipPageReset(true)
-        // console.log("my data is updated")
+        console.log("my data is updated")
         setData(old =>
             old.map((row, index) => {
                 if (index === rowIndex) {
-                    //
                     return {
                         ...old[rowIndex],
                         [columnId]: value,

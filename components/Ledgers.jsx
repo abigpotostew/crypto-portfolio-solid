@@ -97,7 +97,7 @@ export default function Ledgers(){
 
     return (
         <div>
-            {/*<Ledger marketRates={marketRates}/>*/}
+            <Ledger marketRates={marketRates}/>
             <MarketRatesTicker rates={marketRates}/>
 
             {ledgers && <Button variant="contained" color="primary" onClick={createLedgerHandler}>
@@ -105,12 +105,8 @@ export default function Ledgers(){
             </Button>}
 
             <p> you have {ledgers && ledgers.length || 0} ledgers</p>
-            {/*<div className="flex">*/}
-            {/*    {ledgers && ledgers.filter(ttlFiles).map(ledger => <LedgerManage key={asUrl(ledger)} ledger={ledger} /> )}*/}
-            {/*</div>*/}
-
             <div className="flex">
-                {ledgers && ledgers.filter(ttlFiles).map(ledger => <Ledger key={asUrl(ledger)} marketRates={marketRates} ledgerStoreRef={ledger} /> )}
+                {ledgers && ledgers.filter(ttlFiles).map(ledger => <LedgerManage key={asUrl(ledger)} ledger={ledger} /> )}
             </div>
         </div>
     )
