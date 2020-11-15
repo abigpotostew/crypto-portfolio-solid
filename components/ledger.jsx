@@ -3,6 +3,7 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
+import {newTrade} from "../src/store";
 
 export default function Ledger({marketRates}) {
 
@@ -15,7 +16,7 @@ export default function Ledger({marketRates}) {
     //todo update calculation when data changes
     const defaultData = [
 
-        {
+        newTrade({
             // key: 0,
             outCurrency: USD,
             inCurrency: CoinETH,
@@ -23,8 +24,8 @@ export default function Ledger({marketRates}) {
             inAmount: 1.51862536,
             fee: 7.34,
             feeCoin: USD,
-        },
-        {
+        }),
+        newTrade({
             // key: 1,
             outCurrency: USD,
             inCurrency: CoinLTC,
@@ -32,8 +33,8 @@ export default function Ledger({marketRates}) {
             inAmount: 5.60673567,
             fee: 4.4,
             feeCoin: USD,
-        },
-        {
+        }),
+        newTrade( {
             // key: 2,
             outCurrency: CoinLTC,
             inCurrency: USD,
@@ -41,8 +42,8 @@ export default function Ledger({marketRates}) {
             inAmount: 293.80,
             fee: 4.44,
             feeCoin: USD,
-        },
-        {
+        }),
+        newTrade({
             // key: 3,
             outCurrency: USD,
             inCurrency: CoinLINK,
@@ -50,50 +51,50 @@ export default function Ledger({marketRates}) {
             inAmount: 29.39195119,
             fee: 7.34,
             feeCoin: USD,
-        },
-        {
+        }),
+        newTrade({
             outCurrency: USD,
             inCurrency: CoinBTC,
             outAmount: 293.80,
             inAmount: .02243376,
             fee: 4.31,
             feeCoin: USD,
-        },
-        {
+        }),
+        newTrade({
             outCurrency: USD,
             inCurrency: CoinETH,
             outAmount: 2000,
             inAmount: 4.4766919,
             fee: 29.36,
             feeCoin: USD,
-        },
+        }),
 
-        {//metamask
+        newTrade({//metamask
             outCurrency: CoinETH,
             inCurrency: CoinETH,
             outAmount: 2.539396,
             inAmount: 2.538955,
             fee: 0,
             feeCoin: CoinETH,
-        },
+        }),
 
-        {
+        newTrade({
             outCurrency: CoinETH,
             inCurrency: CoinETH,
             outAmount: 1.14074601,
             inAmount:  1.140305,
             fee: 0.00044100,
             feeCoin: CoinETH,
-        },
-        {
+        }),
+        newTrade({
             outCurrency: CoinETH,
             inCurrency: CoinPRQ,
             outAmount: 3.65,
             inAmount: 10072.693,
             fee: 0.002032,
             feeCoin: CoinETH,
-        },
-        {
+        }),
+        newTrade({
             //kraken wire. leaving out deposit amount now since it would be counted as a profit
             outCurrency: USD,
             inCurrency: USD,
@@ -101,7 +102,7 @@ export default function Ledger({marketRates}) {
             inAmount: 0,
             fee: 20,
             feeCoin: USD,
-        },
+        }),
     ]
 
     const [data, setData] = React.useState(React.useMemo(() => defaultData, []))

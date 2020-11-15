@@ -1,11 +1,14 @@
-import {coinBase, coinGecko, initialMarketRates, mergeRates} from "../src/marketrates";
-import {createLedger, useLedgerContainerUri, ttlFiles, deleteLedger, getRows, createTradeRow} from "../src/store";
+import {coinGecko, initialMarketRates} from "../src/marketrates";
 import {
-    useWebId, useAuthentication,
-    useMyProfile, useProfile,
-    useEnsured, useContainer,
-    useThing
-} from 'swrlit'
+    createLedger,
+    createTradeRow,
+    deleteLedger,
+    getRows,
+    getTrade,
+    ttlFiles,
+    useLedgerContainerUri
+} from "../src/store";
+import {useContainer, useWebId} from 'swrlit'
 import {asUrl} from "@itme/solid-client"
 import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
@@ -13,14 +16,19 @@ import React from "react"
 
 import Button from "@material-ui/core/Button"
 
-function LedgerManage({ledger}){
+function Trade({trade}) {
+    const {url, outAmount, outCurrency, inAmount, inCurrency, fee, feeCoin} = getTrade(trade)
+    return (<li>{outAmount} {outCurrency} for {inAmount} {inCurrency} and {fee} {feeCoin} fee</li>)
+}
 
-    const {trades, resource:ledgerResource, saveResource, ledgerThing} = getRows(ledger)
+function LedgerManage({ledger}) {
 
-    const handleDelete = async () =>{
+    const {trades, resource: ledgerResource, saveResource, ledgerThing} = getRows(ledger)
+
+    const handleDelete = async () => {
         await deleteLedger(ledger)
     }
-    const createTradeRowHandler =  async () => {
+    const createTradeRowHandler = async () => {
         await createTradeRow({ledger: ledgerThing, ledgerResource: ledgerResource, saveResource: saveResource})
     }
 
@@ -29,7 +37,7 @@ function LedgerManage({ledger}){
             <p>{asUrl(ledger)}</p>
             <p>You have {trades && trades.length} trades</p>
             <ul>
-                {trades && trades.map( trade => <li key={trade}>{trade}</li>)}
+                {trades && trades.map(trade => <Trade key={trade} trade={trade}></Trade>)}
             </ul>
 
             <Button onClick={createTradeRowHandler}>Add Row</Button>

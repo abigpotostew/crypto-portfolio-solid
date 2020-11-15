@@ -1,20 +1,24 @@
+import {useEnsured, useProfile, useThing} from 'swrlit'
 import {
-    useWebId, useAuthentication,
-    useMyProfile, useProfile,
-    useEnsured, useContainer,
-    useThing
-} from 'swrlit'
-import {
-    createSolidDataset, saveSolidDatasetInContainer,
-    setThing, createThing, asUrl,
-    getUrl, getUrlAll, addUrl,
-    getStringNoLocale, setStringNoLocale,
-    getDatetime, setDatetime, setDecimal
+    addUrl,
+    asUrl,
+    createSolidDataset,
+    createThing,
+    getDecimal,
+    getStringNoLocale,
+    getUrl,
+    getUrlAll,
+    saveSolidDatasetInContainer,
+    setDatetime,
+    setDecimal,
+    setStringNoLocale,
+    setThing
 } from '@itme/solid-client'
 import {WS} from '@inrupt/vocab-solid-common'
 import {RDF, RDFS} from '@inrupt/vocab-common-rdf'
-
-import { schema } from 'rdf-namespaces';
+import moment from 'moment'
+import {schema} from 'rdf-namespaces';
+import {USD} from "./currencies";
 
 
 const cryptledgerNs = "https://stewartbracken.club/v/cryptoledger#"
@@ -38,7 +42,7 @@ export async function deleteLedger(ledger, ledgerContainerUri, mutateLedgers){
     mutateLedgers()
 }
 
-export async function createLedger ({ name = "Cryptocurrency Ledger"},  ledgerContainerUri, mutateLedgers)  {
+export async function createLedger({name = "Cryptocurrency Ledger"}, ledgerContainerUri, mutateLedgers) {
     var ledger = createThing({name: 'ledger'});
     ledger = addUrl(ledger, RDF.type, LedgerType.Ledger)
     ledger = setStringNoLocale(ledger, RDFS.label, name)
@@ -57,23 +61,54 @@ export function ttlFiles(resource) {
     return asUrl(resource).endsWith(".ttl")
 }
 
-export function getRows(ledgerObject){
+
+export function getTrade(tradeUrl) {
+    // return tradeUrl
+    const url = tradeUrl
+    const {thing: tradeThing} = useThing(`${url}`)
+    // const name = tradeThing && getStringNoLocale(tradeThing, RDFS.label)
+
+    const getAmount = (typeRef) => {
+        const amountUrl = tradeThing && getUrl(tradeThing, typeRef)
+        const {thing: amountThing} = useThing(`${amountUrl}`)
+
+        const currency = amountThing && getStringNoLocale(amountThing, schema.currency)
+        const amount = amountThing && getDecimal(amountThing, schema.amount)
+        return {currency: currency, amount: amount}
+    }
+
+    const {currency: outCurrency, amount: outAmount} = getAmount(LedgerType.outAmount)
+    const {currency: inCurrency, amount: inAmount} = getAmount(LedgerType.inAmount)
+    const {currency: feeCurrency, amount: feeAmount} = getAmount(LedgerType.feeAmount)
+
+    return newTrade({
+        outCurrency:outCurrency,
+        outAmount:outAmount,
+        inCurrency:inCurrency,
+        inAmount:inAmount,
+        feeCurrency:feeCurrency,
+        feeAmount:feeAmount,
+        url:tradeUrl
+    })
+}
+
+export function getRows(ledgerObject) {
     //trades in ledger
     const url = asUrl(ledgerObject)
-    const { thing: ledgerThing, save, resource, saveResource } = useThing(`${url}#ledger`)
+    const {thing: ledgerThing, save, resource, saveResource} = useThing(`${url}#ledger`)
     const name = ledgerThing && getStringNoLocale(ledgerThing, RDFS.label)
     const trades = ledgerThing && getUrlAll(ledgerThing, LedgerType.trades)
 
-    if (trades){
+    if (trades) {
         //loop
         // trade
         //{trades && trades.map(trade => <Entry key={entry} entryUri={entry}/>)}
-        return {ledgerThing:ledgerThing,trades:trades, resource:resource, saveResource:saveResource}
+        return {ledgerThing: ledgerThing, trades: trades, resource: resource, saveResource: saveResource}
         // const { thing: entry, save } = useThing(entryUri)
         // const description = getStringNoLocale(entry, RDFS.comment)
         // const start = getDatetime(entry, schema.startTime)
         // const end = getDatetime(entry, schema.endTime)
-    }else{
+    } else {
         //return pending
         return {}
     }
@@ -84,56 +119,56 @@ export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
     trade = addUrl(trade, RDF.type, LedgerType.Trade)
     //todo set all the trade fields here
     trade = setStringNoLocale(trade, RDFS.comment, "HELLO WORLD")
-    // trade = setDatetime(trade, schema.startTime, startMoment.toDate())
+
+    var now = moment().toDate()
+    trade = setDatetime(trade, schema.dateCreated, now)
+    trade = setDatetime(trade, schema.dateModified, now)
     // trade = setDatetime(trade, schema.endTime, endMoment.toDate())
     // trade = setStringNoLocale(trade, RDFS.PaymentCurrencyAmount)
 
-    var newLedgerResource
-    const addAmount = (schemaType)=>{
+    const addAmount = (trade, ledgerResource, schemaType) => {
         var amount = createThing()
         amount = addUrl(amount, RDF.type, schema.MonetaryAmount) // it is a monetary amount type
         amount = setStringNoLocale(amount, schema.currency, "USD")
         amount = setDecimal(amount, schema.amount, 1.1)
-        newLedgerResource = setThing(ledgerResource, amount)
+        ledgerResource = setThing(ledgerResource, amount)
         trade = addUrl(trade, schemaType, amount)
+        return [trade, ledgerResource]
     }
 
-    addAmount(LedgerType.outAmount)
-    addAmount(LedgerType.inAmount)
-    addAmount(LedgerType.feeAmount)
-    //
-    // var outAmount = createThing()
-    // outAmount = addUrl(outAmount, RDF.type, schema.MonetaryAmount) // it is a monetary amount type
-    // outAmount = setStringNoLocale(outAmount, schema.currency, "USD")
-    // outAmount = setDecimal(outAmount, schema.amount, 1.1)
-    // var newLedgerResource = setThing(ledgerResource, outAmount)
-    // trade = addUrl(trade, LedgerType.outAmount, outAmount)
-    //
-    // var inAmount = createThing()
-    // inAmount = addUrl(inAmount, RDF.type, schema.MonetaryAmount) // it is a monetary amount type
-    // inAmount = setStringNoLocale(inAmount, schema.currency, "BTC")
-    // inAmount = setDecimal(inAmount, schema.amount, 1.1)
-    // newLedgerResource = setThing(ledgerResource, inAmount)
-    // trade = addUrl(trade, LedgerType.inAmount, inAmount)
-    //
-    // var inAmount = createThing()
-    // inAmount = addUrl(inAmount, RDF.type, schema.MonetaryAmount) // it is a monetary amount type
-    // inAmount = setStringNoLocale(inAmount, schema.currency, "BTC")
-    // inAmount = setDecimal(inAmount, schema.amount, 1.1)
-    // newLedgerResource = setThing(ledgerResource, inAmount)
-    // trade = addUrl(trade, LedgerType.inAmount, inAmount)
+    var [trade1, ledgerResource1] = addAmount(trade, ledgerResource, LedgerType.outAmount)
+    var [trade2, ledgerResource2] = addAmount(trade1, ledgerResource1, LedgerType.inAmount)
+    var [trade3, ledgerResource3] = addAmount(trade2, ledgerResource2, LedgerType.feeAmount)
+    trade = trade3
+    ledgerResource = ledgerResource3
 
-    var newTrade = addUrl(ledger, LedgerType.trades, trade) //todo add this for monetary amount
-    newLedgerResource = setThing(newLedgerResource, newTrade)
-    newLedgerResource = setThing(newLedgerResource, trade)
-    await saveResource(newLedgerResource)
-    // callback("")
+    var newLedger = addUrl(ledger, LedgerType.trades, trade)//add trade to the ledger
+    ledgerResource = setThing(ledgerResource, newLedger)
+    ledgerResource = setThing(ledgerResource, trade)//add
+    await saveResource(ledgerResource)
+}
 
-
-
-    // ideas for format
-    // schema.price
-    // schema.amount =
-    // schema.priceCurrency = "USD"
-    // schema.MonetaryAmount = "50 USD" //create thing
+// export class Trade {
+//     outCurrency;
+//     inCurrency;
+//     outAmount;
+//     inAmount;
+//     fee;
+//     feeCoin;
+export function newTrade({outCurrency,
+                         inCurrency,
+                         outAmount,
+                         inAmount,
+                         fee,
+                         feeCoin,
+                         url}){
+    const out = {}
+    out.outCurrency = outCurrency
+    out.inCurrency = inCurrency;
+    out.outAmount = outAmount;
+    out.inAmount = inAmount;
+    out.fee = fee;
+    out.feeCoin = feeCoin;
+    out.url = url
+    return out
 }
