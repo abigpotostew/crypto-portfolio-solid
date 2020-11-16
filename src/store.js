@@ -1,4 +1,4 @@
-import {useEnsured, useProfile, useThing} from 'swrlit'
+// import {useEnsured, useProfile, useThing} from 'swrlit'
 import {
     addUrl,
     asUrl,
@@ -13,13 +13,15 @@ import {
     setDecimal,
     setStringNoLocale,
     setThing
-} from '@itme/solid-client'
+} from '@inrupt/solid-client'
 import {WS} from '@inrupt/vocab-solid-common'
 import {RDF, RDFS} from '@inrupt/vocab-common-rdf'
 import moment from 'moment'
 import {schema} from 'rdf-namespaces';
 import {USD} from "./currencies";
+import {createDocument, fetchDocument} from 'tripledoc';
 
+const docname = "Cryptocurrency%20Ledger.ttl"
 
 const cryptledgerNs = "https://stewartbracken.club/v/cryptoledger#"
 export const LedgerType = {
@@ -148,13 +150,6 @@ export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
     await saveResource(ledgerResource)
 }
 
-// export class Trade {
-//     outCurrency;
-//     inCurrency;
-//     outAmount;
-//     inAmount;
-//     fee;
-//     feeCoin;
 export function newTrade({outCurrency,
                          inCurrency,
                          outAmount,
@@ -171,4 +166,47 @@ export function newTrade({outCurrency,
     out.feeCoin = feeCoin;
     out.url = url
     return out
+}
+
+export async function getLedgerDoc(podDocUrl) {
+    const docPath = `${podDocUrl}/${docname}`;
+
+    try {
+        return await fetchDocument(docPath);
+    } catch (err) {
+        return await createDocument(docPath);
+    }
+}
+
+export function getLedgerThings(ledgerDoc){
+    const ledgers = ledgerDoc.getAllSubjectsOfType(LedgerType.Ledger);//one per doc??
+    return ledgers
+}
+
+export  function getAllTradesDataFromDoc(ledgerDocument, ledgerThing){
+    try {
+
+        const tradesRefs = ledgerThing.getAllRefs(LedgerType.trades)
+        const tradesData = tradesRefs.map((subjectUrl)=> {
+            const trade = ledgerDocument.getSubject(subjectUrl)
+            const outAmount = ledgerDocument.getSubject(trade.getRef(LedgerType.outAmount))
+            const inAmount = ledgerDocument.getSubject(trade.getRef(LedgerType.inAmount))
+            const feeAmount = ledgerDocument.getSubject(trade.getRef(LedgerType.feeAmount))
+           return newTrade({
+
+                outCurrency: outAmount.getString(schema.currency),
+                inCurrency: inAmount.getString(schema.currency),
+                outAmount: outAmount.getDecimal(schema.amount),
+                inAmount: inAmount.getDecimal(schema.amount),
+                fee: feeAmount.getDecimal(schema.amount),
+                feeCoin: feeAmount.getString(schema.currency),
+                url: subjectUrl,
+            })
+        })
+
+        return tradesData
+    } catch (err) {
+        return [];
+    }
+
 }

@@ -5,7 +5,7 @@ import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
 import {newTrade} from "../src/store";
 
-export default function Ledger({marketRates}) {
+export default function Ledger({marketRates, tradesData}) {
 
     // const USD = USD
     // const CoinLTC = CoinLTC
@@ -14,6 +14,7 @@ export default function Ledger({marketRates}) {
     // const CoinBTC = CoinBTC
 
     //todo update calculation when data changes
+    // const data = tradesData
     const defaultData = [
 
         newTrade({
@@ -105,7 +106,8 @@ export default function Ledger({marketRates}) {
         }),
     ]
 
-    const [data, setData] = React.useState(React.useMemo(() => defaultData, []))
+    //todo the data is not coming in from tripledoc
+    const [data, setData] = React.useState(React.useMemo(() => tradesData, [tradesData]))
     const [skipPageReset, setSkipPageReset] = React.useState(false)
 
     const [totalValue, setTotalValue] = React.useState(0)

@@ -1,13 +1,12 @@
 import '../styles/globals.css'
+import {AppProvider} from "../contexts/AppContext";
 
-import { AuthenticationProvider } from 'swrlit'
 
 function MyApp({ Component, pageProps }) {
   return (
-
-      <AuthenticationProvider>
+<AppProvider>
         <Component {...pageProps} />
-      </AuthenticationProvider>
+</AppProvider>
   )
 }
 

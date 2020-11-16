@@ -1,25 +1,11 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import React from "react";
-import {useWebId,useAuthentication} from 'swrlit'
 import Ledgers from "../components/Ledgers";
+import {useWebId} from "../src/solid";
+import {AuthButton} from "@solid/react"
 
-export function AuthButtonNew() {
-    const { popupLogin, logout } = useAuthentication()
-    const webId = useWebId()
-    if (webId === undefined) {
-        return <div>loading...</div>
-    } else
-        if (webId === null) {
-        return (
-            <button onClick={() => popupLogin({ popupUri: "/popup.html" })}>
-                log in
-            </button>
-        )
-    } else {
-        return <button onClick={() => logout()}>log out</button>
-    }
-}
+
 export default function Home() {
     const myWebId = useWebId()
 
@@ -34,7 +20,7 @@ export default function Home() {
       <main className={styles.main}>
 
 
-          <AuthButtonNew />
+          <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
           <p>{myWebId}</p>
           {myWebId?<Ledgers /> : <p>you're logged out</p>}
 
