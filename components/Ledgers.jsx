@@ -72,6 +72,8 @@ export default function Ledgers(){
             const ledgerContainerUri = getPodFromWebId(webId, "private")
             // const { resources: ledgers, mutate: mutateLedgers } = useContainer(ledgerContainerUri)
             const podDocument = await getLedgerDoc(ledgerContainerUri);
+
+            console.log("trades now",getAllTradesDataFromDoc(podDocument))
             // const ledgerThings = podDocument && getLedgerThings(podDocument)
             // const ledgerThing = ledgerThings && ledgerThings[0]
 

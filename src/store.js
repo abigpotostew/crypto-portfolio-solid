@@ -125,12 +125,19 @@ export function newTrade({
 export async function getLedgerDoc(podDocUrl) {
     const docPath = `${podDocUrl}/${docname}`;
 
+    let docOut
     try {
-        return await fetchDocument(docPath);
+        console.log("fetching pod document at", docPath)
+        docOut = await fetchDocument(docPath);
+        console.log("fetched pod document at", docPath)
     } catch (err) {
         //TODO need to test this. it may need to use create doc in container
-        return await createDocument(docPath);
+        console.log("creating new pod document at", docPath)
+        docOut = await createDocument(docPath);
+        console.log("created new pod document at", docPath)
     }
+
+    return docOut
 }
 
 export function getLedgerThings(ledgerDoc){
@@ -159,11 +166,11 @@ function hydrateTradeData(podDocument, tradeSubjectRef){
     })
 }
 
-export function getAllTradesDataFromDoc(ledgerDocument, ledgerThing) {
+export function getAllTradesDataFromDoc(podDocument) {
     try {
 
-        const tradesRefs = ledgerThing.getAllRefs(LedgerType.trades)
-        const tradesData = tradesRefs.map((t)=>hydrateTradeData(ledgerDocument,t))
+        const tradesRefs = podDocument.getAllSubjectsOfType(LedgerType.Trade)
+        const tradesData = tradesRefs.map((t)=>hydrateTradeData(podDocument,t.asRef()))
 
         return tradesData
     } catch (err) {
@@ -171,46 +178,68 @@ export function getAllTradesDataFromDoc(ledgerDocument, ledgerThing) {
     }
 }
 
-export async function saveTradesToLedger({podDocument, ledgerThing, tradesData}) {
+async function deleteAllSubjectsOfType({podDocument, types}){
+    //delete all existing items
+    const deletedSubjects = []
+    types.forEach((type)=>{
+        podDocument.getAllSubjectsOfType(type).forEach((s)=>{
+            deletedSubjects.push(s.asRef())
+            podDocument.removeSubject(s.asRef())
+        })
+    })
+
+    // the pod respects predicate references.. so by deleting trade, it also deletes the monetary value subjects
+
+    console.log("saving deletes for ",types, deletedSubjects)
+    podDocument = await podDocument.save(deletedSubjects.map((ref)=>podDocument.getSubject(ref)))
+    console.log("saved deletes for ",types, deletedSubjects)
+    return podDocument
+}
+
+export async function saveTradesToLedger({podDocument, tradesData}) {
     //map each one to an existing subject, but update the data in each.
     // for new ones (missing url) add it to the ledger thing and document (create traderowtdoc)
+    //it would be a good question for solid forum to isolate this scenario for replication.
 
-    podDocument.
+    // i have to delete monetary amount in a separate save. not sure why.
+    podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[LedgerType.Trade]})
+    podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[schema.MonetaryAmount]})
+
 
     tradesData.map((t) => {
-        if (t.url && podDocument.getSubject(t.url)) {
-            // it's a modify
-            const tradeSubject = podDocument.getSubject(t.url)
-            //set all fields here
-
-            //it's lame but this is the fix to the delete existing problem.
-            if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
-                return null //skip update if data is unchanged
-            }
-            setTradeInDocument({
-                podDocument: podDocument,
-                ledgerSubject: ledgerThing,
-                tradeData: t,
-                tradeSubject: tradeSubject
-            })
-            //don't set it on the ledger object because it's already there
-            //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
-        } else {
+        // if (t.url && podDocument.getSubject(t.url)) {
+        //     // it's a modify
+        //     const tradeSubject = podDocument.getSubject(t.url)
+        //     //set all fields here
+        //
+        //     //it's lame but this is the fix to the delete existing problem.
+        //     if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
+        //         return null //skip update if data is unchanged
+        //     }
+        //     setTradeInDocument({
+        //         podDocument: podDocument,
+        //         ledgerSubject: ledgerThing,
+        //         tradeData: t,
+        //         tradeSubject: tradeSubject
+        //     })
+        //     //don't set it on the ledger object because it's already there
+        //     //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
+        // } else {
             //it's a create
             const newTrade = setNewTradeInDocument({
                 podDocument: podDocument,
-                ledgerSubject: ledgerThing,
                 tradeData: t
             })
             t.url = newTrade.asRef()
-            ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
-        }
+            // ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
+        // }
     })
 
     //it can delete data that is updated to the same value, or something.
+    console.log("saving new trades")
     const savedDoc = await podDocument.save();
-    console.log("saved)")
-    return {podDocumentModified: savedDoc, ledgerSubject: ledgerThing, tradesData:tradesData}
+    console.log("saved new trades")
+    return {podDocumentModified: savedDoc, tradesData:tradesData}
 
     // todo handle deletes
 }
@@ -224,7 +253,7 @@ function setDataDefaults(tradeData){
     tradeData.feeCoin =tradeData.feeCoin || 'USD'
 }
 
-function setTradeInDocument({podDocument, ledgerSubject, tradeData, tradeSubject}) {
+function setTradeInDocument({podDocument, tradeData, tradeSubject}) {
     tradeSubject.setRef(RDF.type, LedgerType.Trade)
     var now = moment().toDate()
     tradeSubject.setDateTime(schema.dateModified, now)
@@ -259,7 +288,7 @@ function setTradeInDocument({podDocument, ledgerSubject, tradeData, tradeSubject
     addAmount(LedgerType.inAmount, tradeData.inAmount, tradeData.inCurrency)
     addAmount(LedgerType.feeAmount, tradeData.fee, tradeData.feeCoin)
 
-    ledgerSubject.setDateTime(schema.dateModified, now)
+    // ledgerSubject.setDateTime(schema.dateModified, now)
 }
 
 function tradeNeedsUpdate({podDocument, tradeData, tradeSubject}){
@@ -273,11 +302,10 @@ function tradeNeedsUpdate({podDocument, tradeData, tradeSubject}){
     return false
 }
 
-function setNewTradeInDocument({podDocument, ledgerSubject, tradeData}) {
+function setNewTradeInDocument({podDocument, tradeData}) {
     const tradeSubject = podDocument.addSubject()
     setTradeInDocument({
         podDocument: podDocument,
-        ledgerSubject: ledgerSubject,
         tradeData: tradeData,
         tradeSubject: tradeSubject
     })

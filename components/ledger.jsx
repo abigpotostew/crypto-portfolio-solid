@@ -12,8 +12,8 @@ export default function Ledger({marketRates}) {
     const { state, dispatch } = React.useContext(AppContext);
     const { webId, ledgersState } = state;
     const {podDocument } = ledgersState && ledgersState || {};
-    const ledgerThings = podDocument && getLedgerThings(podDocument)
-    const ledgerThing = ledgerThings && ledgerThings[0]
+    // const ledgerThings = podDocument && getLedgerThings(podDocument)
+    // const ledgerThing = ledgerThings && ledgerThings[0]
     //todo handle empty ledger
 
     // const USD = USD
@@ -25,12 +25,12 @@ export default function Ledger({marketRates}) {
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
         console.log("loaded data from memo")
-        return getAllTradesDataFromDoc(podDocument, ledgerThing)
+        return getAllTradesDataFromDoc(podDocument)
     }, []))
 
     React.useEffect(()=>{
         console.log("setting data from doc trades...")
-        setData(getAllTradesDataFromDoc(podDocument, ledgerThing))
+        setData(getAllTradesDataFromDoc(podDocument))
         console.log("done setting data from doc trades")
     }, [podDocument])
 
@@ -45,13 +45,12 @@ export default function Ledger({marketRates}) {
 
         console.log("setDataHandler saving...", newData)
         // store save ledger trades,
-        const {podDocumentModified} = await saveTradesToLedger({podDocument: podDocument, ledgerThing: ledgerThing, tradesData: newData})
+        const {podDocumentModified} = await saveTradesToLedger({podDocument: podDocument, tradesData: newData})
         // t.url = tradeRef
         // const newdata = data.concat(t)
         console.log("setDataHandler saved", newData)
 
         // dispatch the thing
-
         dispatch({
             type: 'set_ledgers_state',
             payload: {"podDocument":podDocumentModified }
@@ -262,7 +261,7 @@ export default function Ledger({marketRates}) {
     const createTradeInDocHandler =async  ()=>{
         const t = newTrade({outCurrency:"USD",inCurrency:"ETH",outAmount:100,inAmount:2,fee:1.5, feeCoin:"USD"})
         try {
-            const {tradeRef, podDocumentModified} = await createTradeRowTDoc({podDocument: podDocument, ledgerThing: ledgerThing, tradeData: t})
+            const {tradeRef, podDocumentModified} = await createTradeRowTDoc({podDocument: podDocument, tradeData: t})
             t.url = tradeRef
             const newdata = data.concat(t)
 
