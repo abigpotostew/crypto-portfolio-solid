@@ -3,15 +3,61 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
-import {newTrade} from "../src/store";
+import {createTradeRowTDoc, getAllTradesDataFromDoc, getLedgerThings, newTrade, saveTradesToLedger} from "../src/store";
+import Button from "@material-ui/core/Button"
+import AppContext from "../contexts/AppContext";
 
-export default function Ledger({marketRates, tradesData}) {
+export default function Ledger({marketRates}) {
+
+    const { state, dispatch } = React.useContext(AppContext);
+    const { webId, ledgersState } = state;
+    const {podDocument } = ledgersState && ledgersState || {};
+    const ledgerThings = podDocument && getLedgerThings(podDocument)
+    const ledgerThing = ledgerThings && ledgerThings[0]
+    //todo handle empty ledger
 
     // const USD = USD
     // const CoinLTC = CoinLTC
     // const CoinETH = CoinETH
     // const CoinLINK = CoinLINK
     // const CoinBTC = CoinBTC
+
+    const [data, setData] = React.useState(React.useMemo(() => {
+        //fetch data from doc
+        console.log("loaded data from memo")
+        return getAllTradesDataFromDoc(podDocument, ledgerThing)
+    }, []))
+
+    React.useEffect(()=>{
+        console.log("setting data from doc trades...")
+        setData(getAllTradesDataFromDoc(podDocument, ledgerThing))
+        console.log("done setting data from doc trades")
+    }, [podDocument])
+
+
+
+
+    //handler passed to table, saves to pod and dispatches new pod doc and ledger thing
+    //don't let anythign else call setData
+    const setDataHandler = async (newData)=>{
+
+        //update external pod and ledger and data will automatically be set after dispatch
+
+        console.log("setDataHandler saving...", newData)
+        // store save ledger trades,
+        const {podDocumentModified} = await saveTradesToLedger({podDocument: podDocument, ledgerThing: ledgerThing, tradesData: newData})
+        // t.url = tradeRef
+        // const newdata = data.concat(t)
+        console.log("setDataHandler saved", newData)
+
+        // dispatch the thing
+
+        dispatch({
+            type: 'set_ledgers_state',
+            payload: {"podDocument":podDocumentModified }
+        });
+        console.log("setDataHandler dispatched")
+    }
 
     //todo update calculation when data changes
     // const data = tradesData
@@ -107,7 +153,8 @@ export default function Ledger({marketRates, tradesData}) {
     ]
 
     //todo the data is not coming in from tripledoc
-    const [data, setData] = React.useState(React.useMemo(() => tradesData, [tradesData]))
+    // const data = React.useMemo(() => tradesData, [tradesData])
+    // const setData = console.error
     const [skipPageReset, setSkipPageReset] = React.useState(false)
 
     const [totalValue, setTotalValue] = React.useState(0)
@@ -180,6 +227,10 @@ export default function Ledger({marketRates, tradesData}) {
     }, [marketRates])
 
 
+    // React.useEffect(()=>{
+    //     setData()
+    // })
+
     // We need to keep the table from resetting the pageIndex when we
     // Update data. So we can keep track of that flag with a ref.
 
@@ -188,6 +239,9 @@ export default function Ledger({marketRates, tradesData}) {
     // original data
     const updateMyData = (rowIndex, columnId, value) => {
         // We also turn on the flag to not reset the page
+
+        // update it in pod now
+
         setSkipPageReset(true)
         console.log("my data is updated")
         setData(old =>
@@ -204,16 +258,43 @@ export default function Ledger({marketRates, tradesData}) {
         setTotalValue(computeMarketRate(data, "USD", marketRates))
     }
 
+
+    const createTradeInDocHandler =async  ()=>{
+        const t = newTrade({outCurrency:"USD",inCurrency:"ETH",outAmount:100,inAmount:2,fee:1.5, feeCoin:"USD"})
+        try {
+            const {tradeRef, podDocumentModified} = await createTradeRowTDoc({podDocument: podDocument, ledgerThing: ledgerThing, tradeData: t})
+            t.url = tradeRef
+            const newdata = data.concat(t)
+
+            setDataHandler(newdata)
+
+            dispatch({
+                type: 'set_ledgers_state',
+                payload: {"podDocument":podDocumentModified }
+            });
+        }catch(e){
+            console.error(e)
+            return
+        }
+    }
+
+
+
     return (<div>
         <EnhancedTable
             columns={columns}
             data={data}
-            setData={setData}
+            setData={setDataHandler}
             updateMyData={updateMyData}
             skipPageReset={skipPageReset}
         />
 
         <p>Total Portfolio Value: {totalValue}</p>
+
+        {podDocument && <Button variant="contained" color="primary" onClick={createTradeInDocHandler}>
+            Create Trade
+        </Button>}
+
     </div>)
 
 }

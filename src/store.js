@@ -4,10 +4,8 @@ import {
     asUrl,
     createSolidDataset,
     createThing,
-    getDecimal,
-    getStringNoLocale,
+    deleteSolidDataset,
     getUrl,
-    getUrlAll,
     saveSolidDatasetInContainer,
     setDatetime,
     setDecimal,
@@ -64,58 +62,6 @@ export function ttlFiles(resource) {
 }
 
 
-export function getTrade(tradeUrl) {
-    // return tradeUrl
-    const url = tradeUrl
-    const {thing: tradeThing} = useThing(`${url}`)
-    // const name = tradeThing && getStringNoLocale(tradeThing, RDFS.label)
-
-    const getAmount = (typeRef) => {
-        const amountUrl = tradeThing && getUrl(tradeThing, typeRef)
-        const {thing: amountThing} = useThing(`${amountUrl}`)
-
-        const currency = amountThing && getStringNoLocale(amountThing, schema.currency)
-        const amount = amountThing && getDecimal(amountThing, schema.amount)
-        return {currency: currency, amount: amount}
-    }
-
-    const {currency: outCurrency, amount: outAmount} = getAmount(LedgerType.outAmount)
-    const {currency: inCurrency, amount: inAmount} = getAmount(LedgerType.inAmount)
-    const {currency: feeCurrency, amount: feeAmount} = getAmount(LedgerType.feeAmount)
-
-    return newTrade({
-        outCurrency:outCurrency,
-        outAmount:outAmount,
-        inCurrency:inCurrency,
-        inAmount:inAmount,
-        feeCurrency:feeCurrency,
-        feeAmount:feeAmount,
-        url:tradeUrl
-    })
-}
-
-export function getRows(ledgerObject) {
-    //trades in ledger
-    const url = asUrl(ledgerObject)
-    const {thing: ledgerThing, save, resource, saveResource} = useThing(`${url}#ledger`)
-    const name = ledgerThing && getStringNoLocale(ledgerThing, RDFS.label)
-    const trades = ledgerThing && getUrlAll(ledgerThing, LedgerType.trades)
-
-    if (trades) {
-        //loop
-        // trade
-        //{trades && trades.map(trade => <Entry key={entry} entryUri={entry}/>)}
-        return {ledgerThing: ledgerThing, trades: trades, resource: resource, saveResource: saveResource}
-        // const { thing: entry, save } = useThing(entryUri)
-        // const description = getStringNoLocale(entry, RDFS.comment)
-        // const start = getDatetime(entry, schema.startTime)
-        // const end = getDatetime(entry, schema.endTime)
-    } else {
-        //return pending
-        return {}
-    }
-}
-
 export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
     var trade = createThing();
     trade = addUrl(trade, RDF.type, LedgerType.Trade)
@@ -150,13 +96,17 @@ export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
     await saveResource(ledgerResource)
 }
 
-export function newTrade({outCurrency,
-                         inCurrency,
-                         outAmount,
-                         inAmount,
-                         fee,
-                         feeCoin,
-                         url}){
+export function newTrade({
+                             outCurrency,
+                             inCurrency,
+                             outAmount,
+                             inAmount,
+                             fee,
+                             feeCoin,
+                             url,
+                             dateCreated,
+                             dateModified
+                         }) {
     const out = {}
     out.outCurrency = outCurrency
     out.inCurrency = inCurrency;
@@ -165,6 +115,10 @@ export function newTrade({outCurrency,
     out.fee = fee;
     out.feeCoin = feeCoin;
     out.url = url
+    out.dateCreated = dateCreated || new Date().getDate()
+    out.dateModified = dateModified || new Date().getDate()
+    // trade.setDateTime(schema.dateCreated, now)
+    // trade.setDateTime(schema.dateModified, now)
     return out
 }
 
@@ -174,6 +128,7 @@ export async function getLedgerDoc(podDocUrl) {
     try {
         return await fetchDocument(docPath);
     } catch (err) {
+        //TODO need to test this. it may need to use create doc in container
         return await createDocument(docPath);
     }
 }
@@ -183,30 +138,158 @@ export function getLedgerThings(ledgerDoc){
     return ledgers
 }
 
-export  function getAllTradesDataFromDoc(ledgerDocument, ledgerThing){
+function hydrateTradeData(podDocument, tradeSubjectRef){
+    const trade = podDocument.getSubject(tradeSubjectRef)
+    const outAmount = podDocument.getSubject(trade.getRef(LedgerType.outAmount))
+    const inAmount = podDocument.getSubject(trade.getRef(LedgerType.inAmount))
+    const feeAmount = podDocument.getSubject(trade.getRef(LedgerType.feeAmount))
+
+    //todo need to verify this incoming data which could be bad data
+    return newTrade({
+
+        outCurrency: outAmount.getString(schema.currency),
+        inCurrency: inAmount.getString(schema.currency),
+        outAmount: outAmount.getDecimal(schema.amount),
+        inAmount: inAmount.getDecimal(schema.amount),
+        fee: feeAmount.getDecimal(schema.amount),
+        feeCoin: feeAmount.getString(schema.currency),
+        url: tradeSubjectRef,
+        dateCreated: trade.getDateTime(schema.dateCreated),
+        dateModified: trade.getDateTime(schema.dateModified)
+    })
+}
+
+export function getAllTradesDataFromDoc(ledgerDocument, ledgerThing) {
     try {
 
         const tradesRefs = ledgerThing.getAllRefs(LedgerType.trades)
-        const tradesData = tradesRefs.map((subjectUrl)=> {
-            const trade = ledgerDocument.getSubject(subjectUrl)
-            const outAmount = ledgerDocument.getSubject(trade.getRef(LedgerType.outAmount))
-            const inAmount = ledgerDocument.getSubject(trade.getRef(LedgerType.inAmount))
-            const feeAmount = ledgerDocument.getSubject(trade.getRef(LedgerType.feeAmount))
-           return newTrade({
-
-                outCurrency: outAmount.getString(schema.currency),
-                inCurrency: inAmount.getString(schema.currency),
-                outAmount: outAmount.getDecimal(schema.amount),
-                inAmount: inAmount.getDecimal(schema.amount),
-                fee: feeAmount.getDecimal(schema.amount),
-                feeCoin: feeAmount.getString(schema.currency),
-                url: subjectUrl,
-            })
-        })
+        const tradesData = tradesRefs.map((t)=>hydrateTradeData(ledgerDocument,t))
 
         return tradesData
     } catch (err) {
         return [];
     }
+}
 
+export async function saveTradesToLedger({podDocument, ledgerThing, tradesData}) {
+    //map each one to an existing subject, but update the data in each.
+    // for new ones (missing url) add it to the ledger thing and document (create traderowtdoc)
+
+    podDocument.
+
+    tradesData.map((t) => {
+        if (t.url && podDocument.getSubject(t.url)) {
+            // it's a modify
+            const tradeSubject = podDocument.getSubject(t.url)
+            //set all fields here
+
+            //it's lame but this is the fix to the delete existing problem.
+            if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
+                return null //skip update if data is unchanged
+            }
+            setTradeInDocument({
+                podDocument: podDocument,
+                ledgerSubject: ledgerThing,
+                tradeData: t,
+                tradeSubject: tradeSubject
+            })
+            //don't set it on the ledger object because it's already there
+            //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
+        } else {
+            //it's a create
+            const newTrade = setNewTradeInDocument({
+                podDocument: podDocument,
+                ledgerSubject: ledgerThing,
+                tradeData: t
+            })
+            t.url = newTrade.asRef()
+            ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
+        }
+    })
+
+    //it can delete data that is updated to the same value, or something.
+    const savedDoc = await podDocument.save();
+    console.log("saved)")
+    return {podDocumentModified: savedDoc, ledgerSubject: ledgerThing, tradesData:tradesData}
+
+    // todo handle deletes
+}
+
+function setDataDefaults(tradeData){
+    tradeData.outAmount =tradeData.outAmount || 0.0
+    tradeData.inAmount =tradeData.inAmount || 0.0
+    tradeData.fee =tradeData.fee || 0.0
+    tradeData.outCurrency=tradeData.outCurrency || "USD"
+    tradeData.inCurrency=tradeData.inCurrency || "BTC"
+    tradeData.feeCoin =tradeData.feeCoin || 'USD'
+}
+
+function setTradeInDocument({podDocument, ledgerSubject, tradeData, tradeSubject}) {
+    tradeSubject.setRef(RDF.type, LedgerType.Trade)
+    var now = moment().toDate()
+    tradeSubject.setDateTime(schema.dateModified, now)
+    tradeSubject.setString(RDFS.comment, "HELLO WORLD")
+
+    //set defaults
+    setDataDefaults(tradeData)
+
+    const addAmount = (schemaType, amountDecimal, currency) => {
+        var amountSubject = tradeSubject.getRef(schemaType)
+
+        //if there's a change then delete the amount and add new
+        if (amountSubject) {
+            amountSubject = podDocument.getSubject(amountSubject)
+            tradeSubject.addRef(schemaType, amountSubject.asRef())
+        }else{
+            amountSubject = podDocument.addSubject()
+            //add vs set. set doesn't work
+            amountSubject.addRef(RDF.type, schema.MonetaryAmount) // it is a monetary amount type
+            tradeSubject.addRef(schemaType, amountSubject.asRef())
+        }
+
+        if (currency !== amountSubject.getString(schema.currency)) {
+            amountSubject.setString(schema.currency, currency)
+        }
+        if (currency !== amountSubject.getDecimal(schema.amount)) {
+            amountSubject.setDecimal(schema.amount, amountDecimal)
+        }
+    }
+
+    addAmount(LedgerType.outAmount, tradeData.outAmount, tradeData.outCurrency)
+    addAmount(LedgerType.inAmount, tradeData.inAmount, tradeData.inCurrency)
+    addAmount(LedgerType.feeAmount, tradeData.fee, tradeData.feeCoin)
+
+    ledgerSubject.setDateTime(schema.dateModified, now)
+}
+
+function tradeNeedsUpdate({podDocument, tradeData, tradeSubject}){
+    const docTrade = hydrateTradeData(podDocument, tradeSubject.asRef())
+
+    const entries = Object.entries(tradeData)
+    for (const [key, value] of entries) {
+        if (docTrade[key] !== value)
+            return true
+    }
+    return false
+}
+
+function setNewTradeInDocument({podDocument, ledgerSubject, tradeData}) {
+    const tradeSubject = podDocument.addSubject()
+    setTradeInDocument({
+        podDocument: podDocument,
+        ledgerSubject: ledgerSubject,
+        tradeData: tradeData,
+        tradeSubject: tradeSubject
+    })
+    tradeSubject.setDateTime(schema.dateCreated, moment().toDate())
+    return tradeSubject
+}
+
+// returns the new trade document reference
+export async function createTradeRowTDoc({podDocument, ledgerThing: ledgerSubject, tradeData}) {
+
+    const tradeSubject = setNewTradeInDocument({podDocument: podDocument, ledgerSubject: ledgerSubject, tradeData: tradeData})
+
+    const savedDoc = await podDocument.save();
+    return {podDocumentModified: savedDoc, ledgerSubject: ledgerSubject, tradeRef: tradeSubject.asRef()}
 }

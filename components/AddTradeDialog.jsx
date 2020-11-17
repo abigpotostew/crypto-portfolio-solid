@@ -27,7 +27,7 @@ const initialData = {
     inCurrency: 'BTC',
     inAmount: 0.0,
     fee:0.0,
-    feeCurrency:'USD',
+    feeCoin:'USD',
     // status: 'single',
     // progress: 0,
     // subRows: undefined,
@@ -65,7 +65,18 @@ const AddTradeDialog = props => {
         switchState.addMultiple ? setOpen(true) : setOpen(false)
     }
 
-    const handleChange = name => ({ target: { value } }) => {
+    const doParseValue = (s) =>{
+        let v = parseFloat(s)
+        if (isNaN(v)){
+            v = 0.0
+        }
+        return v
+    }
+    const handleChange = (name,isNumeric) => ({target:{value}}) => {
+        //need to convert some to numbers
+        if (isNumeric){
+            value = doParseValue(value)
+        }
         console.log("yo",name, "is now", value)
         setTrade({ ...trade, [name]: value })
     }
@@ -107,7 +118,7 @@ const AddTradeDialog = props => {
                         type="number"
                         fullWidth
                         value={trade.outAmount}
-                        onChange={handleChange('outAmount')}
+                        onChange={handleChange('outAmount', true)}
                     />
                     {/*<TextField*/}
                     {/*    margin="dense"*/}
@@ -127,7 +138,7 @@ const AddTradeDialog = props => {
                         type="number"
                         fullWidth
                         value={trade.inAmount}
-                        onChange={handleChange('inAmount')}
+                        onChange={handleChange('inAmount', true)}
                     />
 
                     <TextField
@@ -136,7 +147,7 @@ const AddTradeDialog = props => {
                         type="number"
                         fullWidth
                         value={trade.fee}
-                        onChange={handleChange('fee')}
+                        onChange={handleChange('fee', true)}
                     />
                     {/*<TextField*/}
                     {/*    margin="dense"*/}
@@ -148,8 +159,8 @@ const AddTradeDialog = props => {
                     {/*/>*/}
                     <CurrencySelect
                         label={"Fee"}
-                        initialSelect={initialData.feeCurrency}
-                        onChangeHandler={handleChange('feeCurrency')} />
+                        initialSelect={initialData.feeCoin}
+                        onChangeHandler={handleChange('feeCoin')} />
 
                 </DialogContent>
                 <DialogActions>

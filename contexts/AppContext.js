@@ -4,7 +4,7 @@ import {getWebId} from "../src/authentication";
 // import { getWebId } from '../functions/authentication';
 
 const initialState = {
-    ledgersState: {tradesData:[], document:null, ledgerThing:null},
+    ledgersState: {podDocument:null},
     webId: null,
 };
 
