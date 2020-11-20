@@ -78,7 +78,7 @@ export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
         var amount = createThing()
         amount = addUrl(amount, RDF.type, schema.MonetaryAmount) // it is a monetary amount type
         amount = setStringNoLocale(amount, schema.currency, "USD")
-        amount = setDecimal(amount, schema.amount, 1.1)
+        amount = setString(amount, schema.amount, 1.1)
         ledgerResource = setThing(ledgerResource, amount)
         trade = addUrl(trade, schemaType, amount)
         return [trade, ledgerResource]
@@ -156,9 +156,9 @@ function hydrateTradeData(podDocument, tradeSubjectRef){
 
         outCurrency: outAmount.getString(schema.currency),
         inCurrency: inAmount.getString(schema.currency),
-        outAmount: outAmount.getDecimal(schema.amount),
-        inAmount: inAmount.getDecimal(schema.amount),
-        fee: feeAmount.getDecimal(schema.amount),
+        outAmount: parseFloat(outAmount.getString(schema.amount)),
+        inAmount: parseFloat(inAmount.getString(schema.amount)),
+        fee: parseFloat(feeAmount.getString(schema.amount)),
         feeCoin: feeAmount.getString(schema.currency),
         url: tradeSubjectRef,
         dateCreated: trade.getDateTime(schema.dateCreated),
@@ -280,7 +280,7 @@ function setTradeInDocument({podDocument, tradeData, tradeSubject}) {
             amountSubject.setString(schema.currency, currency)
         }
         if (currency !== amountSubject.getDecimal(schema.amount)) {
-            amountSubject.setDecimal(schema.amount, amountDecimal)
+            amountSubject.setString(schema.amount, String(amountDecimal))
         }
     }
 
