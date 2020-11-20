@@ -3,9 +3,10 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
-import {createTradeRowTDoc, getAllTradesDataFromDoc, getLedgerThings, newTrade, saveTradesToLedger} from "../src/store";
+import {createTradeRowTDoc, getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
 import Button from "@material-ui/core/Button"
 import AppContext from "../contexts/AppContext";
+import {getPodFromWebId} from "./Ledgers";
 
 export default function Ledger({marketRates}) {
 
@@ -50,10 +51,13 @@ export default function Ledger({marketRates}) {
         // const newdata = data.concat(t)
         console.log("setDataHandler saved", newData)
 
+        const ledgerContainerUri = getPodFromWebId(webId, "private")
+        const fetchedPodDocument = await getLedgerDoc(ledgerContainerUri);
+
         // dispatch the thing
         dispatch({
             type: 'set_ledgers_state',
-            payload: {"podDocument":podDocumentModified }
+            payload: {"podDocument":fetchedPodDocument }
         });
         console.log("setDataHandler dispatched")
     }
@@ -221,9 +225,9 @@ export default function Ledger({marketRates}) {
         []
     )
 
-    React.useEffect(()=>{
+    React.useEffect(() => {
         setTotalValue(computeMarketRate(data, "USD", marketRates))
-    }, [marketRates])
+    }, [marketRates, data])
 
 
     // React.useEffect(()=>{
@@ -242,19 +246,35 @@ export default function Ledger({marketRates}) {
         // update it in pod now
 
         setSkipPageReset(true)
-        console.log("my data is updated")
-        setData(old =>
-            old.map((row, index) => {
-                if (index === rowIndex) {
-                    return {
-                        ...old[rowIndex],
-                        [columnId]: value,
-                    }
+        console.log("my data is updating")
+        // setData(async old => {
+        //         const out = old.map((row, index) => {
+        //             if (index === rowIndex) {
+        //                 return {
+        //                     ...old[rowIndex],
+        //                     [columnId]: value,
+        //                 }
+        //             }
+        //             return row
+        //         })
+        //         await setDataHandler(out)
+        //         return out
+        //     }
+        // )
+        //might get into async problems using data directly, should use state hook prior state
+        setDataHandler(data.map((row, index) => {
+            if (index === rowIndex) {
+                return {
+                    ...data[rowIndex],
+                    [columnId]: value,
                 }
-                return row
-            })
-        )
-        setTotalValue(computeMarketRate(data, "USD", marketRates))
+            }
+            return row
+        }))
+        console.log("my data is updated")
+
+        // setTotalValue(computeMarketRate(data, "USD", marketRates))
+
     }
 
 
@@ -283,8 +303,8 @@ export default function Ledger({marketRates}) {
         <EnhancedTable
             columns={columns}
             data={data}
-            setData={setDataHandler}
-            updateMyData={updateMyData}
+            setData={setDataHandler} // add, remove delete table action
+            updateMyData={updateMyData} // table edit inline action
             skipPageReset={skipPageReset}
         />
 

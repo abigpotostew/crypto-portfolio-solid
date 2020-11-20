@@ -145,14 +145,22 @@ export function getLedgerThings(ledgerDoc){
     return ledgers
 }
 
-function hydrateTradeData(podDocument, tradeSubjectRef){
-    const trade = podDocument.getSubject(tradeSubjectRef)
-    const outAmount = podDocument.getSubject(trade.getRef(LedgerType.outAmount))
-    const inAmount = podDocument.getSubject(trade.getRef(LedgerType.inAmount))
-    const feeAmount = podDocument.getSubject(trade.getRef(LedgerType.feeAmount))
+function hydrateTradeData(podDocument, tradeSubject){
+    // const trade = podDocument.getSubject(tradeSubjectRef)
+    const trade = tradeSubject
+    const outAmtRef = trade.getRef(LedgerType.outAmount)
+    const inAmtRef = trade.getRef(LedgerType.inAmount)
+    const feeAmtRef = trade.getRef(LedgerType.feeAmount)
+    if (!outAmtRef||!inAmtRef || !feeAmtRef){
+        console.error("missing amount")
+        throw new Error("something is missing")
+    }
+    const outAmount = podDocument.getSubject(outAmtRef)
+    const inAmount = podDocument.getSubject(inAmtRef)
+    const feeAmount = podDocument.getSubject(feeAmtRef)
 
     //todo need to verify this incoming data which could be bad data
-    return newTrade({
+    const newData = {
 
         outCurrency: outAmount.getString(schema.currency),
         inCurrency: inAmount.getString(schema.currency),
@@ -160,17 +168,18 @@ function hydrateTradeData(podDocument, tradeSubjectRef){
         inAmount: parseFloat(inAmount.getString(schema.amount)),
         fee: parseFloat(feeAmount.getString(schema.amount)),
         feeCoin: feeAmount.getString(schema.currency),
-        url: tradeSubjectRef,
+        url: tradeSubject.asRef(),
         dateCreated: trade.getDateTime(schema.dateCreated),
         dateModified: trade.getDateTime(schema.dateModified)
-    })
+    }
+    return newTrade(newData)
 }
 
 export function getAllTradesDataFromDoc(podDocument) {
     try {
 
-        const tradesRefs = podDocument.getAllSubjectsOfType(LedgerType.Trade)
-        const tradesData = tradesRefs.map((t)=>hydrateTradeData(podDocument,t.asRef()))
+        const tradeSubjects = podDocument.getAllSubjectsOfType(LedgerType.Trade)
+        const tradesData = tradeSubjects.map((t)=>hydrateTradeData(podDocument,t))
 
         return tradesData
     } catch (err) {
@@ -202,29 +211,30 @@ export async function saveTradesToLedger({podDocument, tradesData}) {
     //it would be a good question for solid forum to isolate this scenario for replication.
 
     // i have to delete monetary amount in a separate save. not sure why.
-    podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[LedgerType.Trade]})
-    podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[schema.MonetaryAmount]})
+    //trying tno avoid this.
+    // podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[LedgerType.Trade]})
+    // podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[schema.MonetaryAmount]})
 
 
     tradesData.map((t) => {
-        // if (t.url && podDocument.getSubject(t.url)) {
-        //     // it's a modify
-        //     const tradeSubject = podDocument.getSubject(t.url)
-        //     //set all fields here
-        //
-        //     //it's lame but this is the fix to the delete existing problem.
-        //     if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
-        //         return null //skip update if data is unchanged
-        //     }
-        //     setTradeInDocument({
-        //         podDocument: podDocument,
-        //         ledgerSubject: ledgerThing,
-        //         tradeData: t,
-        //         tradeSubject: tradeSubject
-        //     })
-        //     //don't set it on the ledger object because it's already there
-        //     //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
-        // } else {
+        if (t.url && podDocument.getSubject(t.url)) {
+            // it's a modify
+            const tradeSubject = podDocument.getSubject(t.url)
+            //set all fields here
+
+            // //it's lame but this is the fix to the delete existing problem.
+            // if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
+            //     return null //skip update if data is unchanged
+            // }
+            setTradeInDocument({
+                podDocument: podDocument,
+                // ledgerSubject: ledgerThing,
+                tradeData: t,
+                tradeSubject: tradeSubject
+            })
+            //don't set it on the ledger object because it's already there
+            //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
+        } else {
             //it's a create
             const newTrade = setNewTradeInDocument({
                 podDocument: podDocument,
@@ -232,7 +242,7 @@ export async function saveTradesToLedger({podDocument, tradesData}) {
             })
             t.url = newTrade.asRef()
             // ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
-        // }
+        }
     })
 
     //it can delete data that is updated to the same value, or something.
@@ -291,16 +301,16 @@ function setTradeInDocument({podDocument, tradeData, tradeSubject}) {
     // ledgerSubject.setDateTime(schema.dateModified, now)
 }
 
-function tradeNeedsUpdate({podDocument, tradeData, tradeSubject}){
-    const docTrade = hydrateTradeData(podDocument, tradeSubject.asRef())
-
-    const entries = Object.entries(tradeData)
-    for (const [key, value] of entries) {
-        if (docTrade[key] !== value)
-            return true
-    }
-    return false
-}
+// function tradeNeedsUpdate({podDocument, tradeData, tradeSubject}){
+//     const docTrade = hydrateTradeData(podDocument, tradeSubject)
+//
+//     const entries = Object.entries(tradeData)
+//     for (const [key, value] of entries) {
+//         if (docTrade[key] !== value)
+//             return true
+//     }
+//     return false
+// }
 
 function setNewTradeInDocument({podDocument, tradeData}) {
     const tradeSubject = podDocument.addSubject()
