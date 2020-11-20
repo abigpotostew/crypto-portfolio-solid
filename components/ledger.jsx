@@ -46,7 +46,7 @@ export default function Ledger({marketRates}) {
 
         console.log("setDataHandler saving...", newData)
         // store save ledger trades,
-        const {podDocumentModified} = await saveTradesToLedger({podDocument: podDocument, tradesData: newData})
+        await saveTradesToLedger( podDocument,  newData)
         // t.url = tradeRef
         // const newdata = data.concat(t)
         console.log("setDataHandler saved", newData)
@@ -281,7 +281,7 @@ export default function Ledger({marketRates}) {
     const createTradeInDocHandler =async  ()=>{
         const t = newTrade({outCurrency:"USD",inCurrency:"ETH",outAmount:100,inAmount:2,fee:1.5, feeCoin:"USD"})
         try {
-            const {tradeRef, podDocumentModified} = await createTradeRowTDoc({podDocument: podDocument, tradeData: t})
+            const {tradeRef, podDocumentModified} = await createTradeRowTDoc( podDocument,  t)
             t.url = tradeRef
             const newdata = data.concat(t)
 

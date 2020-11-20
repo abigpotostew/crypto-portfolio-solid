@@ -1,20 +1,10 @@
 import {coinGecko, initialMarketRates} from "../src/marketrates";
-import {
-    createLedger,
-    createTradeRow, createTradeRowTDoc,
-    deleteLedger, getAllTradesDataFromDoc, getLedgerDoc, getLedgerThing, getLedgerThings, newTrade,
-    ttlFiles,
-    useLedgerContainerUri
-} from "../src/store";
+import {getAllTradesDataFromDoc, getLedgerDoc,} from "../src/store";
 // import {useContainer, useWebId} from 'swrlit'
 // import {asUrl} from "@itme/solid-client"
 import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
 import React from "react"
-import Tripledoc from "tripledoc"
-
-import Button from "@material-ui/core/Button"
-import {useWebId} from "../src/solid";
 import AppContext from "../contexts/AppContext";
 
 export function getPodFromWebId(webId, path = 'public') {

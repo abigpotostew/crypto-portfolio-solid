@@ -3,6 +3,7 @@ import styles from '../styles/Home.module.css'
 import React from "react";
 import Ledgers from "../components/Ledgers";
 import {useWebId} from "../src/solid";
+// @ts-ignore
 import {AuthButton} from "@solid/react"
 
 
@@ -84,4 +85,5 @@ export default function Home() {
 
     </div>
   )
-}
+};
+//
