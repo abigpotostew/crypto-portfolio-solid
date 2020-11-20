@@ -27,11 +27,8 @@ export const LedgerType = {
     Trade: `${cryptledgerNs}Trade`,
     trades: `${cryptledgerNs}trades`,
     outAmount: `${cryptledgerNs}outAmount`,
-    outCurrency: `${cryptledgerNs}outCurrency`,
     inAmount: `${cryptledgerNs}inAmount`,
-    inCurrency: `${cryptledgerNs}inCurrency`,
-    feeAmount: `${cryptledgerNs}fee`,
-    feeCurrency: `${cryptledgerNs}feeCurrency`,
+    feeAmount: `${cryptledgerNs}feeAmount`,
 }
 
 export function useLedgerContainerUri(webId, path = 'public') {
@@ -55,11 +52,49 @@ export async function createLedger({name = "Cryptocurrency Ledger"}, ledgerConta
     mutateLedgers()
 }
 
+function useStorageContainer(webId) {
+    const {profile} = useProfile(webId)
+    return profile && getUrl(profile, WS.storage)
+}
+
 export function ttlFiles(resource) {
     return asUrl(resource).endsWith(".ttl")
 }
 
 
+export async function createTradeRow ({ledger, ledgerResource, saveResource}) {
+    var trade = createThing();
+    trade = addUrl(trade, RDF.type, LedgerType.Trade)
+    //todo set all the trade fields here
+    trade = setStringNoLocale(trade, RDFS.comment, "HELLO WORLD")
+
+    var now = moment().toDate()
+    trade = setDatetime(trade, schema.dateCreated, now)
+    trade = setDatetime(trade, schema.dateModified, now)
+    // trade = setDatetime(trade, schema.endTime, endMoment.toDate())
+    // trade = setStringNoLocale(trade, RDFS.PaymentCurrencyAmount)
+
+    const addAmount = (trade, ledgerResource, schemaType) => {
+        var amount = createThing()
+        amount = addUrl(amount, RDF.type, schema.MonetaryAmount) // it is a monetary amount type
+        amount = setStringNoLocale(amount, schema.currency, "USD")
+        amount = setDecimal(amount, schema.amount, 1.1)
+        ledgerResource = setThing(ledgerResource, amount)
+        trade = addUrl(trade, schemaType, amount)
+        return [trade, ledgerResource]
+    }
+
+    var [trade1, ledgerResource1] = addAmount(trade, ledgerResource, LedgerType.outAmount)
+    var [trade2, ledgerResource2] = addAmount(trade1, ledgerResource1, LedgerType.inAmount)
+    var [trade3, ledgerResource3] = addAmount(trade2, ledgerResource2, LedgerType.feeAmount)
+    trade = trade3
+    ledgerResource = ledgerResource3
+
+    var newLedger = addUrl(ledger, LedgerType.trades, trade)//add trade to the ledger
+    ledgerResource = setThing(ledgerResource, newLedger)
+    ledgerResource = setThing(ledgerResource, trade)//add
+    await saveResource(ledgerResource)
+}
 
 export function newTrade({
                              outCurrency,
@@ -112,20 +147,19 @@ export function getLedgerThings(ledgerDoc){
 
 function hydrateTradeData(podDocument, tradeSubjectRef){
     const trade = podDocument.getSubject(tradeSubjectRef)
-    // const outAmount = podDocument.getSubject(trade.getRef(LedgerType.outAmount))
-    // const inAmount = podDocument.getSubject(trade.getRef(LedgerType.inAmount))
+    const outAmount = podDocument.getSubject(trade.getRef(LedgerType.outAmount))
+    const inAmount = podDocument.getSubject(trade.getRef(LedgerType.inAmount))
+    const feeAmount = podDocument.getSubject(trade.getRef(LedgerType.feeAmount))
 
-
-    // const feeAmount = podDocument.getSubject(trade.getRef(LedgerType.feeAmount))
     //todo need to verify this incoming data which could be bad data
     return newTrade({
 
-        outCurrency: trade.getString(LedgerType.outCurrency),
-        inCurrency: trade.getString(LedgerType.inCurrency),
-        feeCoin: trade.getString(LedgerType.feeCurrency),
-        outAmount: parseFloat(trade.getString(LedgerType.outAmount)),
-        inAmount: parseFloat(trade.getString(LedgerType.inAmount)),
-        fee: parseFloat(trade.getString(LedgerType.feeAmount)),
+        outCurrency: outAmount.getString(schema.currency),
+        inCurrency: inAmount.getString(schema.currency),
+        outAmount: outAmount.getDecimal(schema.amount),
+        inAmount: inAmount.getDecimal(schema.amount),
+        fee: feeAmount.getDecimal(schema.amount),
+        feeCoin: feeAmount.getString(schema.currency),
         url: tradeSubjectRef,
         dateCreated: trade.getDateTime(schema.dateCreated),
         dateModified: trade.getDateTime(schema.dateModified)
@@ -144,35 +178,53 @@ export function getAllTradesDataFromDoc(podDocument) {
     }
 }
 
+async function deleteAllSubjectsOfType({podDocument, types}){
+    //delete all existing items
+    const deletedSubjects = []
+    types.forEach((type)=>{
+        podDocument.getAllSubjectsOfType(type).forEach((s)=>{
+            deletedSubjects.push(s.asRef())
+            podDocument.removeSubject(s.asRef())
+        })
+    })
+
+    // the pod respects predicate references.. so by deleting trade, it also deletes the monetary value subjects
+
+    console.log("saving deletes for ",types, deletedSubjects)
+    podDocument = await podDocument.save(deletedSubjects.map((ref)=>podDocument.getSubject(ref)))
+    console.log("saved deletes for ",types, deletedSubjects)
+    return podDocument
+}
+
 export async function saveTradesToLedger({podDocument, tradesData}) {
     //map each one to an existing subject, but update the data in each.
     // for new ones (missing url) add it to the ledger thing and document (create traderowtdoc)
     //it would be a good question for solid forum to isolate this scenario for replication.
 
     // i have to delete monetary amount in a separate save. not sure why.
-  // podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[LedgerType.Trade]})
-    // podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[schema.MonetaryAmount]})
+    podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[LedgerType.Trade]})
+    podDocument = await deleteAllSubjectsOfType({podDocument:podDocument, types:[schema.MonetaryAmount]})
 
 
     tradesData.map((t) => {
-        if (t.url && podDocument.getSubject(t.url)) {
-            // it's a modify
-            const tradeSubject = podDocument.getSubject(t.url)
-            //set all fields here
-
-            //it's lame but this is the fix to the delete existing problem.
-            if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
-                return null //skip update if data is unchanged
-            }
-            setTradeInDocument({
-                podDocument: podDocument,
-                // ledgerSubject: ledgerThing,
-                tradeData: t,
-                tradeSubject: tradeSubject
-            })
-            //don't set it on the ledger object because it's already there
-            //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
-        } else {
+        // if (t.url && podDocument.getSubject(t.url)) {
+        //     // it's a modify
+        //     const tradeSubject = podDocument.getSubject(t.url)
+        //     //set all fields here
+        //
+        //     //it's lame but this is the fix to the delete existing problem.
+        //     if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
+        //         return null //skip update if data is unchanged
+        //     }
+        //     setTradeInDocument({
+        //         podDocument: podDocument,
+        //         ledgerSubject: ledgerThing,
+        //         tradeData: t,
+        //         tradeSubject: tradeSubject
+        //     })
+        //     //don't set it on the ledger object because it's already there
+        //     //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
+        // } else {
             //it's a create
             const newTrade = setNewTradeInDocument({
                 podDocument: podDocument,
@@ -180,7 +232,7 @@ export async function saveTradesToLedger({podDocument, tradesData}) {
             })
             t.url = newTrade.asRef()
             // ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
-        }
+        // }
     })
 
     //it can delete data that is updated to the same value, or something.
@@ -210,12 +262,31 @@ function setTradeInDocument({podDocument, tradeData, tradeSubject}) {
     //set defaults
     setDataDefaults(tradeData)
 
-    tradeSubject.setString(LedgerType.outAmount, ""+tradeData.outAmount)
-    tradeSubject.setString(LedgerType.outCurrency, tradeData.outCurrency)
-    tradeSubject.setString(LedgerType.inAmount, ""+tradeData.inAmount)
-    tradeSubject.setString(LedgerType.inCurrency, tradeData.inCurrency)
-    tradeSubject.setString(LedgerType.feeAmount, ""+tradeData.fee)
-    tradeSubject.setString(LedgerType.feeCurrency, tradeData.feeCoin)
+    const addAmount = (schemaType, amountDecimal, currency) => {
+        var amountSubject = tradeSubject.getRef(schemaType)
+
+        //if there's a change then delete the amount and add new
+        if (amountSubject) {
+            amountSubject = podDocument.getSubject(amountSubject)
+            tradeSubject.addRef(schemaType, amountSubject.asRef())
+        }else{
+            amountSubject = podDocument.addSubject()
+            //add vs set. set doesn't work
+            amountSubject.addRef(RDF.type, schema.MonetaryAmount) // it is a monetary amount type
+            tradeSubject.addRef(schemaType, amountSubject.asRef())
+        }
+
+        if (currency !== amountSubject.getString(schema.currency)) {
+            amountSubject.setString(schema.currency, currency)
+        }
+        if (currency !== amountSubject.getDecimal(schema.amount)) {
+            amountSubject.setDecimal(schema.amount, amountDecimal)
+        }
+    }
+
+    addAmount(LedgerType.outAmount, tradeData.outAmount, tradeData.outCurrency)
+    addAmount(LedgerType.inAmount, tradeData.inAmount, tradeData.inCurrency)
+    addAmount(LedgerType.feeAmount, tradeData.fee, tradeData.feeCoin)
 
     // ledgerSubject.setDateTime(schema.dateModified, now)
 }
