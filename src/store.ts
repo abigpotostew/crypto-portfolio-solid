@@ -59,7 +59,8 @@ export function newTrade({
         feeCoin: feeCoin,
         url: url,
         dateCreated: dateCreated || new Date().getDate(),
-        dateModified: dateModified || new Date().getDate()
+        dateModified: dateModified || new Date().getDate(),
+        dirty:false,
     }
     return out
 }
@@ -99,7 +100,6 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
     const outAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.outAmount)
     const inAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.inAmount)
     const feeAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.feeAmount)
-
 
     if (!outAmount || !inAmount || !feeAmount) {
         console.error("missing amount")
@@ -219,32 +219,25 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
 
         let amountSubject: TripleSubject|undefined = getPriceSpecSubject(podDocument.doc, tradeSubject, schemaType)
 
-        // if (amountSubject) {
-        //     // amountSubject = doc.getSubject(amountSubject.asRef())
-        //     // tradeSubject.addRef(schemaType, amountSubject.asRef())
-        // } else {
-        //     amountSubject = doc.addSubject()
-        //     //add vs set. set doesn't work
-        // }
-
         if (!amountSubject){
             amountSubject= doc.addSubject()
         }
 
         amountSubject.setRef(RDF.type, schema.PriceSpecification)
-        if (!amountSubject.getAllRefs(schema.additionalType).some((r)=>r===schemaType)) {
-            amountSubject.addRef(schema.additionalType, schemaType)
-        }
-        if (!amountSubject.getAllRefs(schema.priceSpecification).some((s)=>s===amountSubject.asRef())) {
-            tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
-        }
 
-        if (currency !== amountSubject.getString(schema.priceCurrency)) {
+        // if (!amountSubject.getAllRefs(schema.additionalType).some((r)=>r===schemaType)) {
+            amountSubject.setRef(schema.additionalType, schemaType)
+        // }
+        // if (!amountSubject.getAllRefs(schema.priceSpecification).some((s)=>s===amountSubject.asRef())) {
+            tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
+        // }
+
+        // if (currency !== amountSubject.getString(schema.priceCurrency)) {
             amountSubject.setString(schema.priceCurrency, currency)
-        }
-        if (amountDecimal !== parseFloat(amountSubject.getString(schema.price)||"0")) {
+        // }
+        // if (amountDecimal !== parseFloat(amountSubject.getString(schema.price)||"0")) {
             amountSubject.setString(schema.price, String(amountDecimal))
-        }
+        // }
         modifiedSubjects.push(amountSubject)
     }
 

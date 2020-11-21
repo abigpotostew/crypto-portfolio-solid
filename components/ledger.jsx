@@ -42,11 +42,14 @@ export default function Ledger({marketRates}) {
     //don't let anythign else call setData
     const setDataHandler = async (newData)=>{
 
+        //detect deletes here :)
+        const deletes= data.filter((d)=>!newData.includes(d))
+        console.log("DELETES",deletes)
         //update external pod and ledger and data will automatically be set after dispatch
 
         console.log("setDataHandler saving...", newData)
         // store save ledger trades,
-        await saveTradesToLedger( podDocument,  newData)
+        await saveTradesToLedger( podDocument,  newData )
         // t.url = tradeRef
         // const newdata = data.concat(t)
         console.log("setDataHandler saved", newData)
@@ -267,6 +270,7 @@ export default function Ledger({marketRates}) {
                 return {
                     ...data[rowIndex],
                     [columnId]: value,
+                    ["dirty"]:true
                 }
             }
             return row
