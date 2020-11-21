@@ -10,8 +10,9 @@ const docname = "Cryptocurrency%20Ledger.ttl"
 const cryptledgerNs = "https://stewartbracken.club/v/cryptoledger#"
 export const LedgerType = {
     Ledger: `${cryptledgerNs}Ledger`,
-    Trade: `${cryptledgerNs}Trade`,
-    trades: `${cryptledgerNs}trades`,
+    Trade: schema.TradeAction,
+    // trades: `${cryptledgerNs}trades`,
+    
     outAmount: `${cryptledgerNs}outAmount`,
     inAmount: `${cryptledgerNs}inAmount`,
     feeAmount: `${cryptledgerNs}feeAmount`,

@@ -1,7 +1,7 @@
 import * as React from 'react'
 // import {mount} from 'enzyme'
 import computeMarketRate from "../src/compute"
-import {parseCoinbaseRates} from "../src/marketrates"
+import {parseCoinbaseRates} from "../src/marketRatesCB"
 //
 
 describe('MarketRates', () => {

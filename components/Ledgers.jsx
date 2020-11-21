@@ -1,4 +1,4 @@
-import {coinGecko, initialMarketRates} from "../src/marketrates";
+import {coinGecko, initialMarketRates} from "../src/marketRatesCB";
 import {getAllTradesDataFromDoc, getLedgerDoc,} from "../src/store";
 // import {useContainer, useWebId} from 'swrlit'
 // import {asUrl} from "@itme/solid-client"
@@ -6,6 +6,7 @@ import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
 import React from "react"
 import AppContext from "../contexts/AppContext";
+import {coinGeckoProvider} from "../src/marketdata/provider";
 
 export function getPodFromWebId(webId, path = 'public') {
     const a = document.createElement('a');
@@ -20,10 +21,14 @@ export default function Ledgers(){
     const {podDocument } = ledgersState && ledgersState || {};
 
     const [isTickerActive, setIsTickerActive] = React.useState(false);
-    const [marketRates, setMarketRates] = React.useState(initialMarketRates())
+    const [currencyProvider] = React.useState(coinGeckoProvider())
+
+    const [currencies, setCurrencies] = React.useState(currencyProvider.getCurrencies())
+    const [marketRates, setMarketRates] = React.useState(currencyProvider.getLatestMarketRates())
+
 
     const getMarketRates = ()=>{
-        coinGecko("USD", ({err, rates}) => {
+        currencyProvider.fetchMarketRates("USD", (err, rates)=>{
             if (err) {
                 console.error(err)
                 console.error("stopping market rates ticker")
@@ -32,7 +37,7 @@ export default function Ledgers(){
                 setMarketRates(rates)
                 //coinbase requires merge
             }
-        }, marketRates)
+        })
     }
 
     // start market rates ticker
@@ -52,8 +57,16 @@ export default function Ledgers(){
 
     // initial market rates query, one time only
     React.useEffect(()=>{
+        currencyProvider.fetchCurrencies((err)=>{
+            setCurrencies(currencyProvider.getCurrencies())
+            getMarketRates()
+            setIsTickerActive(true)
+            // fetch market rates
+        })
+        // then fetch market rates
+        // then start the timer using set ticker
         // do stuff here...
-        getMarketRates()
+
     }, []) // <-- empty dependency array
 
 
