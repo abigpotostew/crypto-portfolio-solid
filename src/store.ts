@@ -12,10 +12,10 @@ export const LedgerType = {
     Ledger: `${cryptledgerNs}Ledger`,
     Trade: schema.TradeAction,
     // trades: `${cryptledgerNs}trades`,
-    
-    outAmount: `${cryptledgerNs}outAmount`,
-    inAmount: `${cryptledgerNs}inAmount`,
-    feeAmount: `${cryptledgerNs}feeAmount`,
+
+    outAmount: `${cryptledgerNs}outPriceSpecification`,
+    inAmount: `${cryptledgerNs}inPriceSpecification`,
+    feeAmount: `${cryptledgerNs}feePriceSpecification`,
 };
 
 export class PodDocument {
@@ -36,6 +36,7 @@ interface Trade {
     url: string; //pod ref
     dateCreated: Date;
     dateModified: Date;
+    dirty:boolean;
 }
 
 export function newTrade({
@@ -83,28 +84,37 @@ export async function getLedgerDoc(podDocUrl: string): Promise<PodDocument> {
     return new PodDocument(docOut)
 }
 
+function getPriceSpecSubject(podDocument: TripleDocument, tradeSubject: TripleSubject, addType: string):TripleSubject|undefined{
+
+    const priceSpecifications = tradeSubject.getAllRefs(schema.priceSpecification)
+
+    const priceSubjects = priceSpecifications.map((pRef)=>podDocument.getSubject(pRef))
+
+    //todo account for multiple add types
+    return priceSubjects.find((pSubject)=>pSubject.getRef(schema.additionalType) === addType)
+}
+
 function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubject) {
     const trade = tradeSubject
-    const outAmtRef = trade.getRef(LedgerType.outAmount)
-    const inAmtRef = trade.getRef(LedgerType.inAmount)
-    const feeAmtRef = trade.getRef(LedgerType.feeAmount)
-    if (!outAmtRef || !inAmtRef || !feeAmtRef) {
+    const outAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.outAmount)
+    const inAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.inAmount)
+    const feeAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.feeAmount)
+
+
+    if (!outAmount || !inAmount || !feeAmount) {
         console.error("missing amount")
         throw new Error("something is missing")
     }
-    const outAmount = podDocument.getSubject(outAmtRef)
-    const inAmount = podDocument.getSubject(inAmtRef)
-    const feeAmount = podDocument.getSubject(feeAmtRef)
 
     //todo need to verify this incoming data which could be bad data
     const newData = {
 
-        outCurrency: outAmount.getString(schema.currency),
-        inCurrency: inAmount.getString(schema.currency),
-        outAmount: parseFloat(outAmount.getString(schema.amount) || "0"),
-        inAmount: parseFloat(inAmount.getString(schema.amount) || "0"),
-        fee: parseFloat(feeAmount.getString(schema.amount) || "0"),
-        feeCoin: feeAmount.getString(schema.currency),
+        outCurrency: outAmount.getString(schema.priceCurrency),
+        inCurrency: inAmount.getString(schema.priceCurrency),
+        outAmount: parseFloat(outAmount.getString(schema.price) || "0"),
+        inAmount: parseFloat(inAmount.getString(schema.price) || "0"),
+        fee: parseFloat(feeAmount.getString(schema.price) || "0"),
+        feeCoin: feeAmount.getString(schema.priceCurrency),
         url: tradeSubject.asRef(),
         dateCreated: trade.getDateTime(schema.dateCreated),
         dateModified: trade.getDateTime(schema.dateModified)
@@ -132,8 +142,13 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
 
     const doc = podDocument.doc
 
-    tradesData.map((t) => {
+    const updatedTrades:TripleSubject[] = new Array<TripleSubject>()
+    for(var i=0;i<tradesData.length;++i){
+        const t = tradesData[i]
         if (t.url && doc.getSubject(t.url)) {
+            if (! t.dirty){
+                continue
+            }
             // it's a modify
             const tradeSubject = doc.getSubject(t.url)
             //set all fields here
@@ -142,31 +157,36 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
             // if (!tradeNeedsUpdate({podDocument:podDocument, tradeData:t, tradeSubject:tradeSubject})){
             //     return null //skip update if data is unchanged
             // }
-            setTradeInDocument(
+            const newTradeSubj = setTradeInDocument(
                 podDocument,
                 // ledgerSubject: ledgerThing,
                 t,
                 tradeSubject
             )
+            updatedTrades.push(...newTradeSubj)
             //todo add to a ledger subject, not just the container
             //don't set it on the ledger object because it's already there
             //ledgerSubject.addRef(LedgerType.trades, tradeSubject.asRef())
         } else {
             //it's a create
-            const newTrade = setNewTradeInDocument(
+            const newSubjects = setNewTradeInDocument(
                 podDocument,
                 t
             )
-            t.url = newTrade.asRef()
+            // t.url = newTrade.asRef()
+            updatedTrades.push( ...newSubjects)
             // ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
         }
-    })
+    }
 
-    //it can delete data that is updated to the same value, or something.
-    console.log("saving new trades")
-    const savedDoc = await doc.save();
-    console.log("saved new trades")
-    return {podDocumentModified: savedDoc, tradesData:tradesData}
+    if (updatedTrades.length>0) {
+        //it can delete data that is updated to the same value, or something.
+        console.log("saving new trades")
+        const savedDoc = await doc.save(updatedTrades);
+        console.log("saved new trades")
+        return {podDocumentModified: savedDoc, tradesData: tradesData}
+    }
+
 
     // todo handle deletes
 }
@@ -180,7 +200,7 @@ function setDataDefaults(tradeData: Trade) {
     tradeData.feeCoin = tradeData.feeCoin || 'USD'
 }
 
-function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSubject: TripleSubject) {
+function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSubject: TripleSubject):TripleSubject[] {
     tradeSubject.setRef(RDF.type, LedgerType.Trade)
     var now = moment().toDate()
     tradeSubject.setDateTime(schema.dateModified, now)
@@ -191,45 +211,60 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
 
     const doc = podDocument.doc
     //todo use type for currency
+
+
+    const modifiedSubjects = new Array<TripleSubject>()
+
     const addAmount = (schemaType: string, amountDecimal: number, currency: string) => {
-        let amountSubjectRef = tradeSubject.getRef(schemaType)
-        let amountSubject: TripleSubject
 
-        //if there's a change then delete the amount and add new
-        if (amountSubjectRef) {
-            amountSubject = doc.getSubject(amountSubjectRef)
-            tradeSubject.addRef(schemaType, amountSubject.asRef())
-        } else {
-            amountSubject = doc.addSubject()
-            //add vs set. set doesn't work
-            amountSubject.addRef(RDF.type, schema.MonetaryAmount) // it is a monetary amount type
-            tradeSubject.addRef(schemaType, amountSubject.asRef())
+        let amountSubject: TripleSubject|undefined = getPriceSpecSubject(podDocument.doc, tradeSubject, schemaType)
+
+        // if (amountSubject) {
+        //     // amountSubject = doc.getSubject(amountSubject.asRef())
+        //     // tradeSubject.addRef(schemaType, amountSubject.asRef())
+        // } else {
+        //     amountSubject = doc.addSubject()
+        //     //add vs set. set doesn't work
+        // }
+
+        if (!amountSubject){
+            amountSubject= doc.addSubject()
         }
 
-        if (currency !== amountSubject.getString(schema.currency)) {
-            amountSubject.setString(schema.currency, currency)
+        amountSubject.setRef(RDF.type, schema.PriceSpecification)
+        if (!amountSubject.getAllRefs(schema.additionalType).some((r)=>r===schemaType)) {
+            amountSubject.addRef(schema.additionalType, schemaType)
         }
-        if (amountDecimal !== amountSubject.getDecimal(schema.amount)) {
-            amountSubject.setString(schema.amount, String(amountDecimal))
+        if (!amountSubject.getAllRefs(schema.priceSpecification).some((s)=>s===amountSubject.asRef())) {
+            tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
         }
+
+        if (currency !== amountSubject.getString(schema.priceCurrency)) {
+            amountSubject.setString(schema.priceCurrency, currency)
+        }
+        if (amountDecimal !== parseFloat(amountSubject.getString(schema.price)||"0")) {
+            amountSubject.setString(schema.price, String(amountDecimal))
+        }
+        modifiedSubjects.push(amountSubject)
     }
 
     addAmount(LedgerType.outAmount, tradeData.outAmount, tradeData.outCurrency)
     addAmount(LedgerType.inAmount, tradeData.inAmount, tradeData.inCurrency)
     addAmount(LedgerType.feeAmount, tradeData.fee, tradeData.feeCoin)
-
+    modifiedSubjects.push(tradeSubject)
+    return modifiedSubjects
     // ledgerSubject.setDateTime(schema.dateModified, now)
 }
 
-function setNewTradeInDocument(podDocument: PodDocument, tradeData: Trade) {
+function setNewTradeInDocument(podDocument: PodDocument, tradeData: Trade) :TripleSubject[]{
     const tradeSubject = podDocument.doc.addSubject()
-    setTradeInDocument(
+    const modifiedSubjects = setTradeInDocument(
         podDocument,
         tradeData,
         tradeSubject
     )
     tradeSubject.setDateTime(schema.dateCreated, moment().toDate())
-    return tradeSubject
+    return modifiedSubjects
 }
 
 // returns the new trade document reference
