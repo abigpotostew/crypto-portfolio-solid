@@ -134,7 +134,7 @@ export function getAllTradesDataFromDoc(podDocument: PodDocument): Trade[] {
     }
 }
 
-export async function saveTradesToLedger(podDocument: PodDocument, tradesData: Trade[]) {
+export async function saveTradesToLedger(podDocument: PodDocument, tradesData: Trade[], deletes:Trade[]) {
     //map each one to an existing subject, but update the data in each.
     // for new ones (missing url) add it to the ledger thing and document (create traderowtdoc)
     //it would be a good question for solid forum to isolate this scenario for replication.
@@ -173,11 +173,31 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
                 podDocument,
                 t
             )
-            // t.url = newTrade.asRef()
             updatedTrades.push( ...newSubjects)
-            // ledgerThing.addRef(LedgerType.trades, newTrade.asRef())
         }
     }
+
+    // remove deletes and associated refs
+    for(var i=0;i<deletes.length;++i){
+        const d = deletes[i]
+        const s = doc.getSubject(d.url)
+        doc.removeSubject(d.url)
+        updatedTrades.push(s)
+
+        const amtRefs = s.getAllRefs(schema.priceSpecification)
+        amtRefs.forEach((ref)=>{
+            const s = doc.getSubject(ref)
+            doc.removeSubject(ref)
+            updatedTrades.push(s)
+        })
+    }
+
+    updatedTrades.push(...deletes.map((d)=> {
+        const s = doc.getSubject(d.url)
+        doc.removeSubject(d.url)
+        return s
+    }))
+    //todo add all the price specs
 
     if (updatedTrades.length>0) {
         //it can delete data that is updated to the same value, or something.
@@ -186,9 +206,6 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
         console.log("saved new trades")
         return {podDocumentModified: savedDoc, tradesData: tradesData}
     }
-
-
-    // todo handle deletes
 }
 
 function setDataDefaults(tradeData: Trade) {
@@ -212,7 +229,6 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
     const doc = podDocument.doc
     //todo use type for currency
 
-
     const modifiedSubjects = new Array<TripleSubject>()
 
     const addAmount = (schemaType: string, amountDecimal: number, currency: string) => {
@@ -223,21 +239,12 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
             amountSubject= doc.addSubject()
         }
 
+        // all existing data must be set again for existing objects, never conditionally set data
         amountSubject.setRef(RDF.type, schema.PriceSpecification)
-
-        // if (!amountSubject.getAllRefs(schema.additionalType).some((r)=>r===schemaType)) {
-            amountSubject.setRef(schema.additionalType, schemaType)
-        // }
-        // if (!amountSubject.getAllRefs(schema.priceSpecification).some((s)=>s===amountSubject.asRef())) {
-            tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
-        // }
-
-        // if (currency !== amountSubject.getString(schema.priceCurrency)) {
-            amountSubject.setString(schema.priceCurrency, currency)
-        // }
-        // if (amountDecimal !== parseFloat(amountSubject.getString(schema.price)||"0")) {
-            amountSubject.setString(schema.price, String(amountDecimal))
-        // }
+        amountSubject.setRef(schema.additionalType, schemaType)
+        tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
+        amountSubject.setString(schema.priceCurrency, currency)
+        amountSubject.setString(schema.price, String(amountDecimal))
         modifiedSubjects.push(amountSubject)
     }
 
