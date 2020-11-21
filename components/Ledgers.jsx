@@ -14,6 +14,8 @@ export function getPodFromWebId(webId, path = 'public') {
     return `${a.protocol}//${a.hostname}/${path}/cryptoledger`;
 }
 
+const alwaysIncludeCoins = ["btc", "eth", "ltc", "prq", "ada"]
+
 export default function Ledgers(){
 
     const { state, dispatch } = React.useContext(AppContext);
@@ -24,11 +26,12 @@ export default function Ledgers(){
     const [currencyProvider] = React.useState(coinGeckoProvider())
 
     const [currencies, setCurrencies] = React.useState(currencyProvider.getCurrencies())
+    const [supportedCurrencies, setSupportedCurrencies] = React.useState(alwaysIncludeCoins)
     const [marketRates, setMarketRates] = React.useState(currencyProvider.getLatestMarketRates())
 
 
     const getMarketRates = ()=>{
-        currencyProvider.fetchMarketRates("USD", (err, rates)=>{
+        currencyProvider.fetchMarketRates("USD", supportedCurrencies,(err, rates)=>{
             if (err) {
                 console.error(err)
                 console.error("stopping market rates ticker")
@@ -55,20 +58,31 @@ export default function Ledgers(){
         return () => clearInterval(interval);
     }, [isTickerActive]);
 
+
     // initial market rates query, one time only
     React.useEffect(()=>{
-        currencyProvider.fetchCurrencies((err)=>{
-            setCurrencies(currencyProvider.getCurrencies())
+        //if currencies are empty
+        if (currencies.getAll().length===0) {
+            currencyProvider.fetchCurrencies((err) => {
+                setCurrencies(currencyProvider.getCurrencies())
+                getMarketRates()
+                setIsTickerActive(true)
+                // fetch market rates
+            })
+        }else{
             getMarketRates()
-            setIsTickerActive(true)
-            // fetch market rates
-        })
+        }
         // then fetch market rates
         // then start the timer using set ticker
         // do stuff here...
 
-    }, []) // <-- empty dependency array
+    }, [supportedCurrencies]) // <-- empty dependency array
 
+
+    // React.useEffect(()=>{
+    //     console.log("fetching market rates from supported currencies")
+    //     if (!marketRates.pending()) getMarketRates()
+    // },[supportedCurrencies])
 
     React.useEffect(() => {
         async function fetchLedgers() {
@@ -77,8 +91,19 @@ export default function Ledgers(){
             const podDocument = await getLedgerDoc(ledgerContainerUri);
 
             console.log("trades now",getAllTradesDataFromDoc(podDocument))
-            // const ledgerThings = podDocument && getLedgerThings(podDocument)
-            // const ledgerThing = ledgerThings && ledgerThings[0]
+
+            let trades = getAllTradesDataFromDoc(podDocument)
+            const uniqueCurrencies = new Set();
+            trades.forEach((t)=>{
+                uniqueCurrencies.add(t.feeCoin)
+                uniqueCurrencies.add(t.outCurrency)
+                uniqueCurrencies.add(t.inCurrency)
+            })
+            //todo remove all non-crypto currencies
+            let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t)=>t!=="USD")
+            uniqueCryptoCoins.push(...alwaysIncludeCoins)
+
+            setSupportedCurrencies(uniqueCryptoCoins)
 
             dispatch({
                 type: 'set_ledgers_state',

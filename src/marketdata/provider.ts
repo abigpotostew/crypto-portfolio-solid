@@ -6,7 +6,7 @@ export interface Provider {
 
     fetchCurrencies(callback: (err: Error | null) => void): void;
 
-    fetchMarketRates(outCurrency: string, callback: (err: Error | null, mr: MarketRates | null) => void): void;
+    fetchMarketRates(outCurrency: string, supportedCurrencies:Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void;
 
     getLatestMarketRates(): MarketRates
 }
@@ -26,6 +26,7 @@ export interface Currency {
 
 export interface MarketRates {
     get: (outC: string | Currency, inC: string | Currency) => number
+    pending: ()=> boolean
 }
 
 
@@ -91,12 +92,21 @@ class CoinGecko implements Provider {
         }
     }
 
-    fetchMarketRates(outCurrency: string, callback: (err: Error | null, mr: MarketRates | null) => void): void {
+    fetchMarketRates(outCurrency: string, supportedCurrencies:Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void {
         const vsCurrency = outCurrency.toLowerCase()
 
-        const fixed = ["bitcoin", "ethereum", "litecoin"]
-        const all = this.getCurrencies().getAll().map((c) => c.id)
-        const idsString = fixed.join(",")
+        const currIds = new Array<string>()
+        supportedCurrencies.forEach((c)=>{
+            const v = this.idMap.get(c.toLowerCase())
+            if (v) currIds.push( v.id)
+        })
+
+        // if (currIds.length==0){
+        //     return // call back??
+        // }
+
+        // const all = this.getCurrencies().getAll().map((c) => c.id)
+        const idsString = currIds.join(",")
 
         const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${vsCurrency}&ids=${idsString}`
         superagent.get(url)
@@ -126,7 +136,8 @@ class CoinGecko implements Provider {
                                     } else {
                                         return forUsd.get(outCurrencyStr.toLowerCase()) || 0.0
                                     }
-                                }
+                                },
+                                pending:()=>false
                             }
 
                             return callback(null, rates)
@@ -147,7 +158,8 @@ class CoinGecko implements Provider {
                     let inCurrencyStr = (typeof inC === "string") ? inC : inC.symbol
                     if (outCurrencyStr === inCurrencyStr) return 1.0
                     return 0
-                }
+                },
+                pending:()=>true
             }
         }
         return this.latestMarketRates
