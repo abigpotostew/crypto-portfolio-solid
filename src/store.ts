@@ -266,10 +266,3 @@ function setNewTradeInDocument(podDocument: PodDocument, tradeData: Trade) :Trip
     tradeSubject.setDateTime(schema.dateCreated, moment().toDate())
     return modifiedSubjects
 }
-
-// returns the new trade document reference
-export async function createTradeRowTDoc(podDocument: PodDocument, tradeData: Trade) {
-    const tradeSubject = setNewTradeInDocument(podDocument, tradeData)
-    const savedDoc = await podDocument.doc.save();
-    return {podDocumentModified: savedDoc, tradeRef: tradeSubject.asRef()}
-}

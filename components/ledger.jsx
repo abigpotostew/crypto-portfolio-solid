@@ -3,7 +3,7 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
-import {createTradeRowTDoc, getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
+import { getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
 import Button from "@material-ui/core/Button"
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
@@ -281,26 +281,6 @@ export default function Ledger({marketRates}) {
     }
 
 
-    const createTradeInDocHandler =async  ()=>{
-        const t = newTrade({outCurrency:"USD",inCurrency:"ETH",outAmount:100,inAmount:2,fee:1.5, feeCoin:"USD"})
-        try {
-            const {tradeRef, podDocumentModified} = await createTradeRowTDoc( podDocument,  t)
-            t.url = tradeRef
-            const newdata = data.concat(t)
-
-            setDataHandler(newdata)
-
-            dispatch({
-                type: 'set_ledgers_state',
-                payload: {"podDocument":podDocumentModified }
-            });
-        }catch(e){
-            console.error(e)
-            return
-        }
-    }
-
-
 
     return (<div>
         <EnhancedTable
@@ -312,10 +292,6 @@ export default function Ledger({marketRates}) {
         />
 
         <p>Total Portfolio Value: {totalValue}</p>
-
-        {podDocument && <Button variant="contained" color="primary" onClick={createTradeInDocHandler}>
-            Create Trade
-        </Button>}
 
     </div>)
 

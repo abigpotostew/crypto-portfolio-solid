@@ -1,4 +1,3 @@
-import {coinGecko, initialMarketRates} from "../src/marketRatesCB";
 import {getAllTradesDataFromDoc, getLedgerDoc,} from "../src/store";
 // import {useContainer, useWebId} from 'swrlit'
 // import {asUrl} from "@itme/solid-client"
