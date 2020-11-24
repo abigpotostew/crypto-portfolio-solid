@@ -3,25 +3,16 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
-import { getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
-import Button from "@material-ui/core/Button"
+import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
 
 export default function Ledger({marketRates}) {
 
-    const { state, dispatch } = React.useContext(AppContext);
-    const { webId, ledgersState } = state;
-    const {podDocument } = ledgersState && ledgersState || {};
-    // const ledgerThings = podDocument && getLedgerThings(podDocument)
-    // const ledgerThing = ledgerThings && ledgerThings[0]
-    //todo handle empty ledger
+    const {state, dispatch} = React.useContext(AppContext);
+    const {webId, ledgersState} = state;
+    const {podDocument} = ledgersState && ledgersState || {};
 
-    // const USD = USD
-    // const CoinLTC = CoinLTC
-    // const CoinETH = CoinETH
-    // const CoinLINK = CoinLINK
-    // const CoinBTC = CoinBTC
 
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
@@ -29,26 +20,24 @@ export default function Ledger({marketRates}) {
         return getAllTradesDataFromDoc(podDocument)
     }, []))
 
-    React.useEffect(()=>{
+    React.useEffect(() => {
         console.log("setting data from doc trades...")
         setData(getAllTradesDataFromDoc(podDocument))
         console.log("done setting data from doc trades")
     }, [podDocument])
 
 
-
-
     //handler passed to table, saves to pod and dispatches new pod doc and ledger thing
     //don't let anythign else call setData
-    const setDataHandler = async (newData)=>{
+    const setDataHandler = async (newData) => {
 
         //detect deletes here :)
-        const deletes= data.filter((d)=>!newData.includes(d))
+        const deletes = data.filter((d) => !newData.includes(d))
         //update external pod and ledger and data will automatically be set after dispatch
 
         console.log("setDataHandler saving...", newData)
         // store save ledger trades,
-        await saveTradesToLedger( podDocument,  newData ,deletes)
+        await saveTradesToLedger(podDocument, newData, deletes)
         // t.url = tradeRef
         // const newdata = data.concat(t)
         console.log("setDataHandler saved", newData)
@@ -59,7 +48,7 @@ export default function Ledger({marketRates}) {
         // dispatch the thing
         dispatch({
             type: 'set_ledgers_state',
-            payload: {"podDocument":fetchedPodDocument }
+            payload: {"podDocument": fetchedPodDocument}
         });
         console.log("setDataHandler dispatched")
     }
@@ -86,7 +75,7 @@ export default function Ledger({marketRates}) {
             fee: 4.4,
             feeCoin: USD,
         }),
-        newTrade( {
+        newTrade({
             // key: 2,
             outCurrency: CoinLTC,
             inCurrency: USD,
@@ -134,7 +123,7 @@ export default function Ledger({marketRates}) {
             outCurrency: CoinETH,
             inCurrency: CoinETH,
             outAmount: 1.14074601,
-            inAmount:  1.140305,
+            inAmount: 1.140305,
             fee: 0.00044100,
             feeCoin: CoinETH,
         }),
@@ -269,7 +258,7 @@ export default function Ledger({marketRates}) {
                 return {
                     ...data[rowIndex],
                     [columnId]: value,
-                    ["dirty"]:true
+                    ["dirty"]: true
                 }
             }
             return row
@@ -279,7 +268,6 @@ export default function Ledger({marketRates}) {
         // setTotalValue(computeMarketRate(data, "USD", marketRates))
 
     }
-
 
 
     return (<div>

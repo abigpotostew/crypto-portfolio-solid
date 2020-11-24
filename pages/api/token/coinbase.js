@@ -72,7 +72,7 @@ function getTokenAsync(code) {
         host: "api.coinbase.com",
         path: '/oauth/token',
         method: 'POST',
-        headers:{
+        headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             'Content-Length': formBody.length
         }
@@ -95,7 +95,7 @@ function getTokenAsync(code) {
                         return
                     }
                     resolve(JSON.parse(str))
-                    return
+
                 });
 
 
@@ -109,7 +109,7 @@ function getTokenAsync(code) {
             //This is the data we are posting, it needs to be a string or a buffer
             req.write(formBody);
             req.end();
-        }catch (err) {
+        } catch (err) {
             reject(err)
         }
     })

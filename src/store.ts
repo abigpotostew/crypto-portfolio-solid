@@ -26,7 +26,7 @@ export class PodDocument {
     }
 }
 
-interface Trade {
+export interface Trade {
     outCurrency: string;
     inCurrency: string;
     outAmount: number;
@@ -37,6 +37,7 @@ interface Trade {
     dateCreated: Date;
     dateModified: Date;
     dirty:boolean;
+    exchange:string;
 }
 
 export function newTrade({
@@ -48,7 +49,8 @@ export function newTrade({
                              feeCoin,
                              url,
                              dateCreated,
-                             dateModified
+                             dateModified,
+    exchange,
                          }: any): Trade {
     const out: Trade = {
         outCurrency: outCurrency,
@@ -61,6 +63,7 @@ export function newTrade({
         dateCreated: dateCreated || new Date().getDate(),
         dateModified: dateModified || new Date().getDate(),
         dirty:false,
+        exchange:exchange,
     }
     return out
 }

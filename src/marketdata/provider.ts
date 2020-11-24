@@ -37,18 +37,20 @@ export function coinGeckoProvider() {
 class CoinGecko implements Provider {
     //todo return fetched data
     latestMarketRates: MarketRates | null;
-    idMap: Map<string, Currency>
+    //lowercase symbol
+    symbolMap: Map<string, Currency>
 
 
     constructor() {
-        this.idMap = new Map();
+        this.symbolMap = new Map();
+
         this.latestMarketRates = null
     }
 
     fetchCurrencies(callback: (err: Error | null) => void): void {
         const listIds = 'https://api.coingecko.com/api/v3/coins/list'
 
-        if (this.idMap && this.idMap.size > 0) {
+        if (this.symbolMap && this.symbolMap.size > 0) {
             return callback(null)
         }
 
@@ -62,13 +64,13 @@ class CoinGecko implements Provider {
                         if (res.status === 200) {
                             //parse it
 
-                            const idMap = new Map<string, Currency>()
+                            const symbolMap = new Map<string, Currency>()
                             for (var i = 0; i < res.body.length; ++i) {
                                 const c = res.body[i]
-                                idMap.set(res.body[i].symbol, {id: c.id, symbol: c.symbol, name: c.name})
+                                symbolMap.set(res.body[i].symbol, {id: c.id, symbol: c.symbol, name: c.name})
                             }
 
-                            this.idMap = idMap
+                            this.symbolMap = symbolMap
                             callback(null)
                         } else {
                             const err = new Error(`Unexpected status ${res.status} from ${listIds}, body: ${res.body}`)
@@ -81,10 +83,10 @@ class CoinGecko implements Provider {
 
     getCurrencies(): Currencies {
         //todo return internal state
-        const idMap = this.idMap
+        const idMap = this.symbolMap
         return {
-            get(id: string): Currency | null {
-                return idMap.get(id) || null
+            get(symbol: string): Currency | null {
+                return idMap.get(symbol.toLowerCase()) || null
             },
             getAll(): Currency[] {
                 return Array.from(idMap.values())
@@ -97,7 +99,7 @@ class CoinGecko implements Provider {
 
         const currIds = new Array<string>()
         supportedCurrencies.forEach((c)=>{
-            const v = this.idMap.get(c.toLowerCase())
+            const v = this.symbolMap.get(c.toLowerCase())
             if (v) currIds.push( v.id)
         })
 

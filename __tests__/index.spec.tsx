@@ -29,14 +29,10 @@ describe('MarketRates', () => {
                 },
             ]
 
-            const marketRates = parseCoinbaseRates("USD", {
-                data: {
-                    rates: {
-                        "ETH": 0.01,
-                        "BTC": 0.01
-                    }
-                }
-            })
+            const marketRates = parseCoinbaseRates(new Map([
+                    ["USD", new Map([["ETH",0.01], ["BTC", 0.01]])],
+                ],
+            ))
 
             // - $202 out usd
             // + $100 eth in
@@ -68,13 +64,11 @@ describe('MarketRates', () => {
                 },
             ]
 
-            const marketRates = parseCoinbaseRates("USD", {
-                data: {
-                    rates: {
-                        "ETH": 0.01,
-                    }
-                }
-            })
+            const marketRates = parseCoinbaseRates(new Map([
+                    ["USD", new Map([["ETH",0.01]])],
+                ],
+            ))
+
 
             expect(computeMarketRate(trades, "USD", marketRates)).toBe(8)
         })
@@ -101,13 +95,10 @@ describe('MarketRates', () => {
                 },
             ]
 
-            const marketRates = parseCoinbaseRates("USD", {
-                data: {
-                    rates: {
-                        "ETH": 0.01,
-                    }
-                }
-            })
+            const marketRates = parseCoinbaseRates(new Map([
+                    ["USD", new Map([["ETH",0.01]])],
+                ],
+            ))
             try {
                 computeMarketRate(trades, "ETH", marketRates)
                 expect(true).toBe(false)
@@ -139,13 +130,11 @@ describe('MarketRates', () => {
                 },
             ]
 
-            const marketRates = parseCoinbaseRates("ETH", {
-                data: {
-                    rates: {
-                        "USD": 100,
-                    }
-                }
-            })
+            const marketRates = parseCoinbaseRates(new Map([
+                    ["ETH", new Map([["USD",100]])],
+                ],
+            ))
+
             try {
                 computeMarketRate(trades, "ETH", marketRates)
                 expect(true).toBe(false)
