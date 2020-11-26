@@ -38,6 +38,7 @@ export interface Trade {
     dateModified: Date;
     dirty:boolean;
     exchange:string;
+    comment: string
 }
 
 export function newTrade({
@@ -51,6 +52,7 @@ export function newTrade({
                              dateCreated,
                              dateModified,
     exchange,
+    notes,
                          }: any): Trade {
     const out: Trade = {
         outCurrency: outCurrency,
@@ -64,6 +66,7 @@ export function newTrade({
         dateModified: dateModified || new Date().getDate(),
         dirty:false,
         exchange:exchange,
+        comment:notes,
     }
     return out
 }
@@ -120,7 +123,8 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
         feeCoin: feeAmount.getString(schema.priceCurrency),
         url: tradeSubject.asRef(),
         dateCreated: trade.getDateTime(schema.dateCreated),
-        dateModified: trade.getDateTime(schema.dateModified)
+        dateModified: trade.getDateTime(schema.dateModified),
+        comment: tradeSubject.getString(RDFS.comment)
     }
     return newTrade(newData)
 }
@@ -224,7 +228,7 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
     tradeSubject.setRef(RDF.type, LedgerType.Trade)
     var now = moment().toDate()
     tradeSubject.setDateTime(schema.dateModified, now)
-    tradeSubject.setString(RDFS.comment, "HELLO WORLD")
+    tradeSubject.setString(RDFS.comment, tradeData.comment)
 
     //set defaults
     setDataDefaults(tradeData)
