@@ -1,11 +1,10 @@
 import superagent from "superagent";
-import {allCoins} from "./currencies";
 import {Currency} from "./marketdata/provider";
 
 // export const coinBase = marketRatesCoinbase
 
 export function initialMarketRates() {
-    const queryRates = function (this:MarketRatesCB, outCurrency:string, inCurrency:string):number {
+    const queryRates = function (this: MarketRatesCB, outCurrency: string, inCurrency: string): number {
         if (outCurrency === inCurrency) return 1.0
         const rates = this.data.get(inCurrency)
         if (!rates) {
@@ -17,7 +16,7 @@ export function initialMarketRates() {
         return 1 / (rates.get(outCurrency) || 1)
     }
     return {
-        get: (outC:string|Currency, inC:string|Currency)=>{
+        get: (outC: string | Currency, inC: string | Currency) => {
 
         }
     }
@@ -35,13 +34,13 @@ export function initialMarketRates() {
 // }
 
 export interface MarketRatesCB {
-    get: (inCurrency:string,outCurrency:string)=>number,
-    data:Map<string,Map<string,number>>
+    get: (inCurrency: string, outCurrency: string) => number,
+    data: Map<string, Map<string, number>>
 }
 
 export interface CallbackResponse {
-    err ?:Error
-    rates ?: MarketRatesCB
+    err?: Error
+    rates?: MarketRatesCB
 }
 
 // //callback gets {err,rates}
@@ -70,17 +69,18 @@ export interface CallbackResponse {
 //         );
 // }
 
-export function parseCoinbaseRates( data:Map<string,Map<string,number>>) :MarketRatesCB{
+export function parseCoinbaseRates(data: Map<string, Map<string, number>>): MarketRatesCB {
     return {
         get: queryRates,
         data: data
     }
 }
+
 //
 // with coinbase, look up the reverse rate (out -> in) and invert rate,
 // example if eth is 400 per usd, then fetch coinbase usd->eth which is
 // 0.0025 then return inverse 1/0.0025 = 400
-const queryRates = function (this:MarketRatesCB, outCurrency:string, inCurrency:string):number {
+const queryRates = function (this: MarketRatesCB, outCurrency: string, inCurrency: string): number {
     if (outCurrency === inCurrency) return 1.0
     const rates = this.data.get(inCurrency)
     if (!rates) {

@@ -1,11 +1,10 @@
 import {getAllTradesDataFromDoc, getLedgerDoc,} from "../src/store";
-// import {useContainer, useWebId} from 'swrlit'
-// import {asUrl} from "@itme/solid-client"
 import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
 import React from "react"
 import AppContext from "../contexts/AppContext";
 import {coinGeckoProvider} from "../src/marketdata/provider";
+import {alwaysIncludeCoins} from "../src/currencies";
 
 export function getPodFromWebId(webId, path = 'public') {
     const a = document.createElement('a');
@@ -13,7 +12,6 @@ export function getPodFromWebId(webId, path = 'public') {
     return `${a.protocol}//${a.hostname}/${path}/cryptoledger`;
 }
 
-const alwaysIncludeCoins = ["btc", "eth", "ltc", "prq", "ada"]
 
 export default function Ledgers(){
 
@@ -86,16 +84,15 @@ export default function Ledgers(){
     React.useEffect(() => {
         async function fetchLedgers() {
             const ledgerContainerUri = getPodFromWebId(webId, "private")
-            // const { resources: ledgers, mutate: mutateLedgers } = useContainer(ledgerContainerUri)
             const podDocument = await getLedgerDoc(ledgerContainerUri);
 
-            console.log("trades now",getAllTradesDataFromDoc(podDocument))
+            console.log("trades now", getAllTradesDataFromDoc(podDocument))
 
             let trades = getAllTradesDataFromDoc(podDocument)
             const uniqueCurrencies = new Set();
             trades.forEach((t)=>{
                 uniqueCurrencies.add(t.feeCoin)
-                uniqueCurrencies.add(t.outCurrency)
+                uniqueCurrencies.add(t.currency)
                 uniqueCurrencies.add(t.inCurrency)
             })
             //todo remove all non-crypto currencies

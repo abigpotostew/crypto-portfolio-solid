@@ -1,9 +1,9 @@
-import {validCurrency} from "./currencies";
+import validCurrency from "./currencies";
 
 export default function computeMarketRate(tradesList, destCurrency, marketRates) {
     const totals = {}
 
-    for (let i =0;i<tradesList.length;++i){
+    for (let i = 0; i < tradesList.length; ++i) {
         const {outAmount, outCurrency, inAmount, inCurrency, fee, feeCoin} = tradesList[i]
         const outCurrent = totals[outCurrency] || 0
         totals[outCurrency] = outCurrent - outAmount
@@ -20,7 +20,7 @@ export default function computeMarketRate(tradesList, destCurrency, marketRates)
     }
 
     let grandTotal = 0
-    for (const currencyName in totals){
+    for (const currencyName in totals) {
         const coinTotal = totals[currencyName]
         //get market rate
         const rate = marketRates.get(currencyName, destCurrency)

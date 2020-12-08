@@ -34,20 +34,21 @@ describe('Trade graph', () => {
 
         // expect(false).toBe(true)
 
-        const trades:Trade[] = [
-           newTrade( {
-                key: 0,
-                outCurrency: "USD",
-                inCurrency: "ETH",
-                outAmount: 100,
-                inAmount: 1,
-                fee: 1,
-                feeCoin: "USD",
-                exchange:""
-            })
-        ]
-
-        const res = graph(trades, testCurrencies())
+        // const trades:Trade[] = [
+        //    newTrade( {
+        //         key: 0,
+        //        pri
+        //         outCurrency: "USD",
+        //         inCurrency: "ETH",
+        //         outAmount: 100,
+        //         inAmount: 1,
+        //         fee: 1,
+        //         feeCoin: "USD",
+        //         exchange:""
+        //     })
+        // ]
+        //
+        // const res = graph(trades, testCurrencies())
 
     })
 })

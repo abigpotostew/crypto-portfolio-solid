@@ -4,6 +4,7 @@ import moment from 'moment'
 import {schema} from 'rdf-namespaces';
 import {USD} from "./currencies";
 import {createDocument, fetchDocument, TripleDocument, TripleSubject} from 'tripledoc';
+import {Currency} from "./marketdata/provider";
 
 const docname = "Cryptocurrency%20Ledger.ttl"
 
@@ -13,8 +14,7 @@ export const LedgerType = {
     Trade: schema.TradeAction,
     // trades: `${cryptledgerNs}trades`,
 
-    outAmount: `${cryptledgerNs}outPriceSpecification`,
-    inAmount: `${cryptledgerNs}inPriceSpecification`,
+    outAmount: `${cryptledgerNs}priceSpecification`,
     feeAmount: `${cryptledgerNs}feePriceSpecification`,
 };
 
@@ -26,47 +26,51 @@ export class PodDocument {
     }
 }
 
+enum TradeType {
+    BUY = 1,
+    SELL,
+    TRANSFER_IN,
+    TRANSFER_OUT
+}
+
 export interface Trade {
-    outCurrency: string;
-    inCurrency: string;
-    outAmount: number;
-    inAmount: number;
-    fee: number;
-    feeCoin: string;
+    currency: Currency;
+    amount: number;
+    cost: number; //in dollars, fiat
+    fee: number; //always in fiat
     url: string; //pod ref
     dateCreated: Date;
     dateModified: Date;
-    dirty:boolean;
-    exchange:string;
+    dirty: boolean;
+    exchange: string;
     comment: string
+    type: TradeType
 }
 
-export function newTrade({
-                             outCurrency,
-                             inCurrency,
-                             outAmount,
-                             inAmount,
-                             fee,
-                             feeCoin,
-                             url,
-                             dateCreated,
-                             dateModified,
-    exchange,
-    notes,
-                         }: any): Trade {
+export function newTrade(
+                             currency: Currency,
+                             amount: number,
+                             cost: number,
+                             fee: number,
+                             url: string,
+                             dateCreated: Date,
+                             dateModified: Date,
+                             exchange: string,
+                             notes: string,
+                             tradeType: TradeType
+                         ): Trade {
     const out: Trade = {
-        outCurrency: outCurrency,
-        inCurrency: inCurrency,
-        outAmount: outAmount,
-        inAmount: inAmount,
+        currency: currency,
+        amount: amount,
+        cost: cost,
         fee: fee,
-        feeCoin: feeCoin,
         url: url,
-        dateCreated: dateCreated || new Date().getDate(),
-        dateModified: dateModified || new Date().getDate(),
-        dirty:false,
-        exchange:exchange,
-        comment:notes,
+        dateCreated: dateCreated || new Date(),
+        dateModified: dateModified || new Date(),
+        dirty: false,
+        exchange: exchange,
+        comment: notes,
+        type: tradeType,
     }
     return out
 }
@@ -104,34 +108,40 @@ function getPriceSpecSubject(podDocument: TripleDocument, tradeSubject: TripleSu
 function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubject) {
     const trade = tradeSubject
     const outAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.outAmount)
-    const inAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.inAmount)
     const feeAmount = getPriceSpecSubject(podDocument, tradeSubject, LedgerType.feeAmount)
 
-    if (!outAmount || !inAmount || !feeAmount) {
+    if (!outAmount || !feeAmount) {
         console.error("missing amount")
         throw new Error("something is missing")
     }
 
     //todo need to verify this incoming data which could be bad data
     const newData = {
+        // BTC
+        currency: outAmount.getString(schema.priceCurrency),
 
-        outCurrency: outAmount.getString(schema.priceCurrency),
-        inCurrency: inAmount.getString(schema.priceCurrency),
-        outAmount: parseFloat(outAmount.getString(schema.price) || "0"),
-        inAmount: parseFloat(inAmount.getString(schema.price) || "0"),
+        // 0.001
+        amount: parseFloat(trade.getString(schema.price) || "0"),
+
+        // $100.19
+        cost: parseFloat(outAmount.getString(schema.price) || "0"),
+
+        // $1.11
         fee: parseFloat(feeAmount.getString(schema.price) || "0"),
-        feeCoin: feeAmount.getString(schema.priceCurrency),
         url: tradeSubject.asRef(),
         dateCreated: trade.getDateTime(schema.dateCreated),
         dateModified: trade.getDateTime(schema.dateModified),
-        comment: tradeSubject.getString(RDFS.comment)
+        comment: tradeSubject.getString(RDFS.comment),
+        type: TradeType.BUY,
     }
-    return newTrade(newData)
+
+    //
+
+    return newTrade(...newData)
 }
 
 export function getAllTradesDataFromDoc(podDocument: PodDocument): Trade[] {
     try {
-
         const tradeSubjects = podDocument.doc.getAllSubjectsOfType(LedgerType.Trade)
         const tradesData = tradeSubjects.map((t) => hydrateTradeData(podDocument.doc, t))
 
@@ -216,12 +226,8 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
 }
 
 function setDataDefaults(tradeData: Trade) {
-    tradeData.outAmount = tradeData.outAmount || 0.0
-    tradeData.inAmount = tradeData.inAmount || 0.0
+    tradeData.amount = tradeData.amount || 0.0
     tradeData.fee = tradeData.fee || 0.0
-    tradeData.outCurrency = tradeData.outCurrency || "USD"
-    tradeData.inCurrency = tradeData.inCurrency || "BTC"
-    tradeData.feeCoin = tradeData.feeCoin || 'USD'
 }
 
 function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSubject: TripleSubject):TripleSubject[] {
@@ -238,7 +244,7 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
 
     const modifiedSubjects = new Array<TripleSubject>()
 
-    const addAmount = (schemaType: string, amountDecimal: number, currency: string) => {
+    const addAmount = (schemaType: string, amountDecimal: number, currency?: Currency) => {
 
         let amountSubject: TripleSubject|undefined = getPriceSpecSubject(podDocument.doc, tradeSubject, schemaType)
 
@@ -250,14 +256,13 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
         amountSubject.setRef(RDF.type, schema.PriceSpecification)
         amountSubject.setRef(schema.additionalType, schemaType)
         tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
-        amountSubject.setString(schema.priceCurrency, currency)
+        if (currency) amountSubject.setString(schema.priceCurrency, currency.symbol)
         amountSubject.setString(schema.price, String(amountDecimal))
-        modifiedSubjects.push(amountSubject)
+        amountSubject?modifiedSubjects.push(amountSubject):null;
     }
 
-    addAmount(LedgerType.outAmount, tradeData.outAmount, tradeData.outCurrency)
-    addAmount(LedgerType.inAmount, tradeData.inAmount, tradeData.inCurrency)
-    addAmount(LedgerType.feeAmount, tradeData.fee, tradeData.feeCoin)
+    addAmount(LedgerType.outAmount, tradeData.amount, tradeData.currency)
+    addAmount(LedgerType.feeAmount, tradeData.fee)
     modifiedSubjects.push(tradeSubject)
     return modifiedSubjects
     // ledgerSubject.setDateTime(schema.dateModified, now)

@@ -6,7 +6,7 @@ export interface Provider {
 
     fetchCurrencies(callback: (err: Error | null) => void): void;
 
-    fetchMarketRates(outCurrency: string, supportedCurrencies:Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void;
+    fetchMarketRates(outCurrency: string, supportedCurrencies: Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void;
 
     getLatestMarketRates(): MarketRates
 }
@@ -22,11 +22,29 @@ export interface Currency {
     id: string
     symbol: string
     name: string
+
+    hasSymbol(symbol: string): boolean
+}
+
+export class SCurrency implements Currency {
+    id: string
+    symbol: string
+    name: string
+
+    constructor(_id: string, _symbol: string, _name: string) {
+        this.id = _id;
+        this.symbol = _symbol;
+        this.name = _name;
+    }
+
+    hasSymbol(symbol: string): boolean {
+        return symbol.toLowerCase() === this.id.toLowerCase()
+    }
 }
 
 export interface MarketRates {
     get: (outC: string | Currency, inC: string | Currency) => number
-    pending: ()=> boolean
+    pending: () => boolean
 }
 
 
@@ -67,7 +85,7 @@ class CoinGecko implements Provider {
                             const symbolMap = new Map<string, Currency>()
                             for (var i = 0; i < res.body.length; ++i) {
                                 const c = res.body[i]
-                                symbolMap.set(res.body[i].symbol, {id: c.id, symbol: c.symbol, name: c.name})
+                                symbolMap.set(res.body[i].symbol, new SCurrency(c.id, c.symbol, c.name))
                             }
 
                             this.symbolMap = symbolMap
@@ -94,13 +112,13 @@ class CoinGecko implements Provider {
         }
     }
 
-    fetchMarketRates(outCurrency: string, supportedCurrencies:Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void {
+    fetchMarketRates(outCurrency: string, supportedCurrencies: Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void {
         const vsCurrency = outCurrency.toLowerCase()
 
         const currIds = new Array<string>()
-        supportedCurrencies.forEach((c)=>{
+        supportedCurrencies.forEach((c) => {
             const v = this.symbolMap.get(c.toLowerCase())
-            if (v) currIds.push( v.id)
+            if (v) currIds.push(v.id)
         })
 
         // if (currIds.length==0){
@@ -139,7 +157,7 @@ class CoinGecko implements Provider {
                                         return forUsd.get(outCurrencyStr.toLowerCase()) || 0.0
                                     }
                                 },
-                                pending:()=>false
+                                pending: () => false
                             }
 
                             return callback(null, rates)
@@ -161,7 +179,7 @@ class CoinGecko implements Provider {
                     if (outCurrencyStr === inCurrencyStr) return 1.0
                     return 0
                 },
-                pending:()=>true
+                pending: () => true
             }
         }
         return this.latestMarketRates

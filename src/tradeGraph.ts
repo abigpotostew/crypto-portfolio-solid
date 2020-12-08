@@ -42,8 +42,8 @@ export function graph(tradesInOrder: Trade[], currencies: Currencies): TradeGrap
 
     let head:Node = {
         id: tradesInOrder[0].url + outnode,
-        value: tradesInOrder[0].outAmount,
-        currency: getReq(tradesInOrder[0].outCurrency),
+        value: tradesInOrder[0].amount,
+        currency: getReq(tradesInOrder[0].currency),
         children: [],
         parent: undefined,
         feeValue:tradesInOrder[0].fee,
@@ -70,7 +70,7 @@ export function graph(tradesInOrder: Trade[], currencies: Currencies): TradeGrap
         const trade = tradesInOrder[i]
 
         //find parent node here
-        if (trade.outCurrency==="USD"){
+        if (trade.currency==="USD"){
             //it's a new usd head
             //add to heads
         }else {
@@ -82,11 +82,11 @@ export function graph(tradesInOrder: Trade[], currencies: Currencies): TradeGrap
         let parentOutNode:Node
 
         // find parent of out node
-        if (trade.outCurrency=="USD"){
+        if (trade.currency=="USD"){
             parentOutNode = {
                 id: trade.url + outnode,
-                value: trade.outAmount,
-                currency: getReq(trade.outCurrency),
+                value: trade.amount,
+                currency: getReq(trade.currency),
                 children: [],
                 parent: undefined,
                 feeValue:trade.fee,
@@ -96,7 +96,7 @@ export function graph(tradesInOrder: Trade[], currencies: Currencies): TradeGrap
         }else{
             //find parent from leaves for our currency
             //which tree?
-            parentOutNode =findLeaf(getReq(trade.outCurrency), trade.exchange)
+            parentOutNode =findLeaf(getReq(trade.currency), trade.exchange)
             //todo what if it's not found?
         }
 
@@ -117,12 +117,12 @@ export function graph(tradesInOrder: Trade[], currencies: Currencies): TradeGrap
          * for each leaf
          */
         let totalOut = calcTotal(outNode.currency)
-        if(totalOut - trade.outAmount > 0){
+        if(totalOut - trade.amount > 0){
 
             const remainderNode:Node = {
                 id: trade.url + remaindernode,
-                value: totalOut - trade.outAmount,
-                currency: getReq(trade.outCurrency),
+                value: totalOut - trade.amount,
+                currency: getReq(trade.currency),
                 children: [],
                 parent: [outNode],
                 feeValue:0,

@@ -2,7 +2,7 @@ import React from "react"
 
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
-import {CoinBTC, CoinETH, CoinLINK, CoinLTC, CoinPRQ, USD} from "../src/currencies";
+import {USD} from "../src/currencies";
 import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
@@ -53,99 +53,6 @@ export default function Ledger({marketRates}) {
         console.log("setDataHandler dispatched")
     }
 
-    //todo update calculation when data changes
-    // const data = tradesData
-    const defaultData = [
-
-        newTrade({
-            // key: 0,
-            outCurrency: USD,
-            inCurrency: CoinETH,
-            outAmount: 500,
-            inAmount: 1.51862536,
-            fee: 7.34,
-            feeCoin: USD,
-        }),
-        newTrade({
-            // key: 1,
-            outCurrency: USD,
-            inCurrency: CoinLTC,
-            outAmount: 300,
-            inAmount: 5.60673567,
-            fee: 4.4,
-            feeCoin: USD,
-        }),
-        newTrade({
-            // key: 2,
-            outCurrency: CoinLTC,
-            inCurrency: USD,
-            outAmount: 5.60673567,
-            inAmount: 293.80,
-            fee: 4.44,
-            feeCoin: USD,
-        }),
-        newTrade({
-            // key: 3,
-            outCurrency: USD,
-            inCurrency: CoinLINK,
-            outAmount: 500,
-            inAmount: 29.39195119,
-            fee: 7.34,
-            feeCoin: USD,
-        }),
-        newTrade({
-            outCurrency: USD,
-            inCurrency: CoinBTC,
-            outAmount: 293.80,
-            inAmount: .02243376,
-            fee: 4.31,
-            feeCoin: USD,
-        }),
-        newTrade({
-            outCurrency: USD,
-            inCurrency: CoinETH,
-            outAmount: 2000,
-            inAmount: 4.4766919,
-            fee: 29.36,
-            feeCoin: USD,
-        }),
-
-        newTrade({//metamask
-            outCurrency: CoinETH,
-            inCurrency: CoinETH,
-            outAmount: 2.539396,
-            inAmount: 2.538955,
-            fee: 0,
-            feeCoin: CoinETH,
-        }),
-
-        newTrade({
-            outCurrency: CoinETH,
-            inCurrency: CoinETH,
-            outAmount: 1.14074601,
-            inAmount: 1.140305,
-            fee: 0.00044100,
-            feeCoin: CoinETH,
-        }),
-        newTrade({
-            outCurrency: CoinETH,
-            inCurrency: CoinPRQ,
-            outAmount: 3.65,
-            inAmount: 10072.693,
-            fee: 0.002032,
-            feeCoin: CoinETH,
-        }),
-        newTrade({
-            //kraken wire. leaving out deposit amount now since it would be counted as a profit
-            outCurrency: USD,
-            inCurrency: USD,
-            outAmount: 0,
-            inAmount: 0,
-            fee: 20,
-            feeCoin: USD,
-        }),
-    ]
-
     //todo the data is not coming in from tripledoc
     // const data = React.useMemo(() => tradesData, [tradesData])
     // const setData = console.error
@@ -156,21 +63,21 @@ export default function Ledger({marketRates}) {
     const columns = React.useMemo(
         () => [
             {
-                Header: 'Out',
-                accessor: 'outAmount',
+                Header: 'Amount',
+                accessor: 'amount',
                 Cell: (table, cell) => {
                     //should have precision of the currency
                     return (<EditableNumericCell {...table} />)
                 },
             },
             {
-                Header: 'Out Currency',
-                accessor: 'outCurrency',
+                Header: 'Coin',
+                accessor: 'currency',
                 Cell: (table, cell) => {
                     // console.log(table, cell)
                     // doesn't work because it updateMyData is needed here
                     // return (<CurrencySelect  label={""}></CurrencySelect>)
-                    return (<span>{table.value}</span>)
+                    return (<span>{table.value.name}</span>)
                 }
             },
             {
