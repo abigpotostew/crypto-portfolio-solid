@@ -13,11 +13,11 @@ export function getPodFromWebId(webId, path = 'public') {
 }
 
 
-export default function Ledgers(){
+export default function Ledgers() {
 
-    const { state, dispatch } = React.useContext(AppContext);
-    const { webId, ledgersState } = state;
-    const {podDocument } = ledgersState && ledgersState || {};
+    const {state, dispatch} = React.useContext(AppContext);
+    const {webId, ledgersState} = state;
+    const {podDocument} = ledgersState && ledgersState || {};
 
     const [isTickerActive, setIsTickerActive] = React.useState(false);
     const [currencyProvider] = React.useState(coinGeckoProvider())
@@ -27,8 +27,8 @@ export default function Ledgers(){
     const [marketRates, setMarketRates] = React.useState(currencyProvider.getLatestMarketRates())
 
 
-    const getMarketRates = ()=>{
-        currencyProvider.fetchMarketRates("USD", supportedCurrencies,(err, rates)=>{
+    const getMarketRates = () => {
+        currencyProvider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
             if (err) {
                 console.error(err)
                 console.error("stopping market rates ticker")
@@ -57,16 +57,16 @@ export default function Ledgers(){
 
 
     // initial market rates query, one time only
-    React.useEffect(()=>{
+    React.useEffect(() => {
         //if currencies are empty
-        if (currencies.getAll().length===0) {
+        if (currencies.getAll().length === 0) {
             currencyProvider.fetchCurrencies((err) => {
                 setCurrencies(currencyProvider.getCurrencies())
                 getMarketRates()
                 setIsTickerActive(true)
                 // fetch market rates
             })
-        }else{
+        } else {
             getMarketRates()
         }
         // then fetch market rates
@@ -90,28 +90,27 @@ export default function Ledgers(){
 
             let trades = getAllTradesDataFromDoc(podDocument)
             const uniqueCurrencies = new Set();
-            trades.forEach((t)=>{
-                uniqueCurrencies.add(t.feeCoin)
+            trades.forEach((t) => {
+                // uniqueCurrencies.add(t.feeCoin)
                 uniqueCurrencies.add(t.currency)
-                uniqueCurrencies.add(t.inCurrency)
+                // uniqueCurrencies.add(t.inCurrency)
             })
             //todo remove all non-crypto currencies
-            let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t)=>t!=="USD")
+            let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t) => t !== "USD")
             uniqueCryptoCoins.push(...alwaysIncludeCoins)
 
             setSupportedCurrencies(uniqueCryptoCoins)
 
             dispatch({
                 type: 'set_ledgers_state',
-                payload: {"podDocument":podDocument }
+                payload: {"podDocument": podDocument}
             });
         }
+
         if (webId !== null) {
             fetchLedgers();
         }
     }, [webId]);
-
-
 
 
     // const createLedgerHandler = async ({ name = "Cryptocurrency Ledger"}) => {
@@ -122,7 +121,7 @@ export default function Ledgers(){
     return (
         <div>
             {/*todo tell this ledger which ledger subject to use*/}
-            {podDocument && <Ledger marketRates={marketRates} />}
+            {podDocument && <Ledger marketRates={marketRates}/>}
             <MarketRatesTicker rates={marketRates}/>
 
 

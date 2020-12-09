@@ -9,6 +9,7 @@ import styles from "../../styles/Home.module.css"
 // @ts-ignore
 import {AuthButton} from "@solid/react"
 import {useWebId} from "../../src/solid";
+import CoinPortfolio from "../../components/CoinPortfolio";
 
 const CoinLayout = () => {
 
@@ -16,6 +17,7 @@ const CoinLayout = () => {
     const router = useRouter()
     const {coinid} = router.query
 
+    //TODO this is all duplicate, figure out where to put this stuff, probably in it's own effect wrapper
     const myWebId = useWebId()
 
     // @ts-ignore
@@ -31,7 +33,7 @@ const CoinLayout = () => {
     const [marketRates, setMarketRates] = React.useState(currencyProvider.getLatestMarketRates())
 
     const getMarketRates = () => {
-        currencyProvider.fetchMarketRates("USD", supportedCurrencies.map((s) => s.symbol), (err, rates) => {
+        currencyProvider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
             if (err) {
                 console.error(err)
                 console.error("stopping market rates ticker")
@@ -107,17 +109,15 @@ const CoinLayout = () => {
         }
     }, [webId]);
 
-    //todo show trades filted to this coin, and
-    //if valid coin only
+    //todo show trades filted to this coin, and if valid coin only
     return (
         <div className={styles.container}>
             <p>{myWebId}</p>
             <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
             <p>Coin ID: {coinid}</p>
-
+            {myWebId && <CoinPortfolio marketRates={marketRates}></CoinPortfolio>}
         </div>
     )
-
 }
 
 

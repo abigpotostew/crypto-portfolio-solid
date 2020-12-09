@@ -4,7 +4,7 @@ import moment from 'moment'
 import {schema} from 'rdf-namespaces';
 import {USD} from "./currencies";
 import {createDocument, fetchDocument, TripleDocument, TripleSubject} from 'tripledoc';
-import {Currency} from "./marketdata/provider";
+import {Currency, UncheckedCurrency} from "./marketdata/provider";
 
 const docname = "Cryptocurrency%20Ledger.ttl"
 
@@ -14,7 +14,7 @@ export const LedgerType = {
     Trade: schema.TradeAction,
     // trades: `${cryptledgerNs}trades`,
 
-    outAmount: `${cryptledgerNs}priceSpecification`,
+    outAmount: `${cryptledgerNs}costSpecification`,
     feeAmount: `${cryptledgerNs}feePriceSpecification`,
 };
 
@@ -48,17 +48,17 @@ export interface Trade {
 }
 
 export function newTrade(
-                             currency: Currency,
-                             amount: number,
-                             cost: number,
-                             fee: number,
-                             url: string,
-                             dateCreated: Date,
-                             dateModified: Date,
-                             exchange: string,
-                             notes: string,
-                             tradeType: TradeType
-                         ): Trade {
+    currency: Currency,
+    amount: number,
+    cost: number,
+    fee: number,
+    url: string,
+    dateCreated: Date,
+    dateModified: Date,
+    exchange: string,
+    notes: string,
+    tradeType: TradeType
+): Trade {
     const out: Trade = {
         currency: currency,
         amount: amount,
@@ -71,6 +71,23 @@ export function newTrade(
         exchange: exchange,
         comment: notes,
         type: tradeType,
+    }
+    return out
+}
+
+export function newTradeC(t: Trade): Trade {
+    const out: Trade = {
+        currency: t.currency,
+        amount: t.amount,
+        cost: t.cost,
+        fee: t.fee,
+        url: t.url,
+        dateCreated: t.dateCreated || new Date(),
+        dateModified: t.dateModified || new Date(),
+        dirty: t.dirty,
+        exchange: t.exchange,
+        comment: t.comment,
+        type: t.type,
     }
     return out
 }
@@ -95,14 +112,14 @@ export async function getLedgerDoc(podDocUrl: string): Promise<PodDocument> {
     return new PodDocument(docOut)
 }
 
-function getPriceSpecSubject(podDocument: TripleDocument, tradeSubject: TripleSubject, addType: string):TripleSubject|undefined{
+function getPriceSpecSubject(podDocument: TripleDocument, tradeSubject: TripleSubject, addType: string): TripleSubject | undefined {
 
     const priceSpecifications = tradeSubject.getAllRefs(schema.priceSpecification)
 
-    const priceSubjects = priceSpecifications.map((pRef)=>podDocument.getSubject(pRef))
+    const priceSubjects = priceSpecifications.map((pRef) => podDocument.getSubject(pRef))
 
     //todo account for multiple add types
-    return priceSubjects.find((pSubject)=>pSubject.getRef(schema.additionalType) === addType)
+    return priceSubjects.find((pSubject) => pSubject.getRef(schema.additionalType) === addType)
 }
 
 function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubject) {
@@ -116,9 +133,9 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
     }
 
     //todo need to verify this incoming data which could be bad data
-    const newData = {
+    const newData: Trade = {
         // BTC
-        currency: outAmount.getString(schema.priceCurrency),
+        currency: new UncheckedCurrency(trade.getString(schema.priceCurrency) || "<missing>") as Currency,
 
         // 0.001
         amount: parseFloat(trade.getString(schema.price) || "0"),
@@ -129,15 +146,17 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
         // $1.11
         fee: parseFloat(feeAmount.getString(schema.price) || "0"),
         url: tradeSubject.asRef(),
-        dateCreated: trade.getDateTime(schema.dateCreated),
-        dateModified: trade.getDateTime(schema.dateModified),
-        comment: tradeSubject.getString(RDFS.comment),
+        dateCreated: trade.getDateTime(schema.dateCreated) || new Date(0),
+        dateModified: trade.getDateTime(schema.dateModified) || new Date(0),
+        comment: tradeSubject.getString(RDFS.comment) || "",
         type: TradeType.BUY,
+        dirty: false,
+        exchange: ""
     }
 
     //
 
-    return newTrade(...newData)
+    return newData
 }
 
 export function getAllTradesDataFromDoc(podDocument: PodDocument): Trade[] {
@@ -151,7 +170,7 @@ export function getAllTradesDataFromDoc(podDocument: PodDocument): Trade[] {
     }
 }
 
-export async function saveTradesToLedger(podDocument: PodDocument, tradesData: Trade[], deletes:Trade[]) {
+export async function saveTradesToLedger(podDocument: PodDocument, tradesData: Trade[], deletes: Trade[]) {
     //map each one to an existing subject, but update the data in each.
     // for new ones (missing url) add it to the ledger thing and document (create traderowtdoc)
     //it would be a good question for solid forum to isolate this scenario for replication.
@@ -159,11 +178,11 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
 
     const doc = podDocument.doc
 
-    const updatedTrades:TripleSubject[] = new Array<TripleSubject>()
-    for(var i=0;i<tradesData.length;++i){
+    const updatedTrades: TripleSubject[] = new Array<TripleSubject>()
+    for (var i = 0; i < tradesData.length; ++i) {
         const t = tradesData[i]
         if (t.url && doc.getSubject(t.url)) {
-            if (! t.dirty){
+            if (!t.dirty) {
                 continue
             }
             // it's a modify
@@ -190,33 +209,33 @@ export async function saveTradesToLedger(podDocument: PodDocument, tradesData: T
                 podDocument,
                 t
             )
-            updatedTrades.push( ...newSubjects)
+            updatedTrades.push(...newSubjects)
         }
     }
 
     // remove deletes and associated refs
-    for(var i=0;i<deletes.length;++i){
+    for (var i = 0; i < deletes.length; ++i) {
         const d = deletes[i]
         const s = doc.getSubject(d.url)
         doc.removeSubject(d.url)
         updatedTrades.push(s)
 
         const amtRefs = s.getAllRefs(schema.priceSpecification)
-        amtRefs.forEach((ref)=>{
+        amtRefs.forEach((ref) => {
             const s = doc.getSubject(ref)
             doc.removeSubject(ref)
             updatedTrades.push(s)
         })
     }
 
-    updatedTrades.push(...deletes.map((d)=> {
+    updatedTrades.push(...deletes.map((d) => {
         const s = doc.getSubject(d.url)
         doc.removeSubject(d.url)
         return s
     }))
     //todo add all the price specs
 
-    if (updatedTrades.length>0) {
+    if (updatedTrades.length > 0) {
         //it can delete data that is updated to the same value, or something.
         console.log("saving new trades")
         const savedDoc = await doc.save(updatedTrades);
@@ -230,7 +249,7 @@ function setDataDefaults(tradeData: Trade) {
     tradeData.fee = tradeData.fee || 0.0
 }
 
-function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSubject: TripleSubject):TripleSubject[] {
+function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSubject: TripleSubject): TripleSubject[] {
     tradeSubject.setRef(RDF.type, LedgerType.Trade)
     var now = moment().toDate()
     tradeSubject.setDateTime(schema.dateModified, now)
@@ -246,10 +265,10 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
 
     const addAmount = (schemaType: string, amountDecimal: number, currency?: Currency) => {
 
-        let amountSubject: TripleSubject|undefined = getPriceSpecSubject(podDocument.doc, tradeSubject, schemaType)
+        let amountSubject: TripleSubject | undefined = getPriceSpecSubject(podDocument.doc, tradeSubject, schemaType)
 
-        if (!amountSubject){
-            amountSubject= doc.addSubject()
+        if (!amountSubject) {
+            amountSubject = doc.addSubject()
         }
 
         // all existing data must be set again for existing objects, never conditionally set data
@@ -258,7 +277,7 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
         tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
         if (currency) amountSubject.setString(schema.priceCurrency, currency.symbol)
         amountSubject.setString(schema.price, String(amountDecimal))
-        amountSubject?modifiedSubjects.push(amountSubject):null;
+        amountSubject ? modifiedSubjects.push(amountSubject) : null;
     }
 
     addAmount(LedgerType.outAmount, tradeData.amount, tradeData.currency)
@@ -268,7 +287,7 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
     // ledgerSubject.setDateTime(schema.dateModified, now)
 }
 
-function setNewTradeInDocument(podDocument: PodDocument, tradeData: Trade) :TripleSubject[]{
+function setNewTradeInDocument(podDocument: PodDocument, tradeData: Trade): TripleSubject[] {
     const tradeSubject = podDocument.doc.addSubject()
     const modifiedSubjects = setTradeInDocument(
         podDocument,

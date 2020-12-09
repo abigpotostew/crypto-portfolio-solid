@@ -6,7 +6,7 @@ export interface Provider {
 
     fetchCurrencies(callback: (err: Error | null) => void): void;
 
-    fetchMarketRates(outCurrency: string, supportedCurrencies: Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void;
+    fetchMarketRates(outCurrency: string, supportedCurrencies: Array<Currency>, callback: (err: (Error | null), mr: (MarketRates | null)) => void): void;
 
     getLatestMarketRates(): MarketRates
 }
@@ -35,6 +35,22 @@ export class SCurrency implements Currency {
         this.id = _id;
         this.symbol = _symbol;
         this.name = _name;
+    }
+
+    hasSymbol(symbol: string): boolean {
+        return symbol.toLowerCase() === this.id.toLowerCase()
+    }
+}
+
+export class UncheckedCurrency implements Currency {
+    id: string
+    symbol: string
+    name: string
+
+    constructor(id: string) {
+        this.id = id;
+        this.symbol = id
+        this.name = id
     }
 
     hasSymbol(symbol: string): boolean {
@@ -112,20 +128,16 @@ class CoinGecko implements Provider {
         }
     }
 
-    fetchMarketRates(outCurrency: string, supportedCurrencies: Array<string>, callback: (err: Error | null, mr: MarketRates | null) => void): void {
+    fetchMarketRates(outCurrency: string, supportedCurrencies: Array<Currency>, callback: (err: (Error | null), mr: (MarketRates | null)) => void): void {
         const vsCurrency = outCurrency.toLowerCase()
 
         const currIds = new Array<string>()
         supportedCurrencies.forEach((c) => {
-            const v = this.symbolMap.get(c.toLowerCase())
+            const v = this.symbolMap.get(c.symbol.toLowerCase())
             if (v) currIds.push(v.id)
         })
 
-        // if (currIds.length==0){
-        //     return // call back??
-        // }
 
-        // const all = this.getCurrencies().getAll().map((c) => c.id)
         const idsString = currIds.join(",")
 
         const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${vsCurrency}&ids=${idsString}`

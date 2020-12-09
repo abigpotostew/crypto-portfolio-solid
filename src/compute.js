@@ -3,17 +3,19 @@ import validCurrency from "./currencies";
 export default function computeMarketRate(tradesList, destCurrency, marketRates) {
     const totals = {}
 
+    const defaultFiat = "USD"
     for (let i = 0; i < tradesList.length; ++i) {
-        const {outAmount, outCurrency, inAmount, inCurrency, fee, feeCoin} = tradesList[i]
-        const outCurrent = totals[outCurrency] || 0
-        totals[outCurrency] = outCurrent - outAmount
-        const inCurrent = totals[inCurrency] || 0
-        totals[inCurrency] = inCurrent + inAmount
+        const t = tradesList[i]
+        const currency = t.currency
+        const amount = t.amount
+        const cost = t.cost
+        const fee = t.fee
+        const outCurrent = totals[defaultFiat] || 0
+        totals[defaultFiat] = outCurrent - cost
+        const inCurrent = totals[currency.symbol] || 0
+        totals[currency.symbol] = inCurrent + amount
         if (fee > 0) {
-            let feeCoinResolved = feeCoin
-            if (!validCurrency(feeCoin)) {
-                feeCoinResolved = outCurrency
-            }
+            let feeCoinResolved = defaultFiat
             const currFeeCoin = totals[feeCoinResolved] || 0
             totals[feeCoinResolved] = currFeeCoin - fee
         }
