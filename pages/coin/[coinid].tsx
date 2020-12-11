@@ -115,7 +115,7 @@ const CoinLayout = () => {
             <p>{myWebId}</p>
             <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
             <p>Coin ID: {coinid}</p>
-            {myWebId && <CoinPortfolio marketRates={marketRates}></CoinPortfolio>}
+            {myWebId && <CoinPortfolio coinId={coinid} marketRates={marketRates}></CoinPortfolio>}
         </div>
     )
 }

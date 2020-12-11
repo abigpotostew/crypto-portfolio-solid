@@ -92,7 +92,7 @@ export default function Ledgers() {
             const uniqueCurrencies = new Set();
             trades.forEach((t) => {
                 // uniqueCurrencies.add(t.feeCoin)
-                uniqueCurrencies.add(t.currency)
+                uniqueCurrencies.add(t.amount.currency)
                 // uniqueCurrencies.add(t.inCurrency)
             })
             //todo remove all non-crypto currencies

@@ -1,24 +1,27 @@
 import React from "react"
 
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
-import computeMarketRate from "../src/compute";
+import computeMarketRate, {NewCompute} from "../src/compute";
 import {USD} from "../src/currencies";
 import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
-import {MarketRates} from "../src/marketdata/provider";
+import {Currency, MarketRates, UncheckedCurrency} from "../src/marketdata/provider";
 
 interface CoinPortfolioProps {
     marketRates: MarketRates
+    coinId: string
 }
 
-export default function CoinPortfolio({marketRates}: CoinPortfolioProps) {
+export default function CoinPortfolio({marketRates, coinId}: CoinPortfolioProps) {
 
     // @ts-ignore
     const {state, dispatch} = React.useContext(AppContext);
     const {webId, ledgersState} = state;
     const {podDocument} = ledgersState && ledgersState || {};
 
+    const [compute] = React.useState(NewCompute())
+    const [coin, setCoin] = React.useState<Currency>(new UncheckedCurrency(coinId))
 
     //TODO figure out where this data should come from in a reused way
     const [data, setData] = React.useState(React.useMemo(() => {
@@ -107,7 +110,7 @@ export default function CoinPortfolio({marketRates}: CoinPortfolioProps) {
     )
 
     React.useEffect(() => {
-        setTotalValue(computeMarketRate(data, "USD", marketRates))
+        setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates))
     }, [marketRates, data])
 
 
@@ -141,7 +144,7 @@ export default function CoinPortfolio({marketRates}: CoinPortfolioProps) {
 
 
     return (<div>
-        <p>Total Portfolio Value: {totalValue}</p>
+        <p>{coin.name} Holdings Market Value: {totalValue}</p>
         <EnhancedTable
             columns={columns}
             data={data}

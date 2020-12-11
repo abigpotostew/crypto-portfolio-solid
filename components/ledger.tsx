@@ -3,12 +3,18 @@ import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
 import {USD} from "../src/currencies";
-import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger} from "../src/store";
+import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
+import {MarketRates} from "../src/marketdata/provider";
 
-export default function Ledger({marketRates}) {
+interface LedgerProps {
+    marketRates: MarketRates
+}
 
+export default function Ledger({marketRates}: LedgerProps) {
+
+    // @ts-ignore
     const {state, dispatch} = React.useContext(AppContext);
     const {webId, ledgersState} = state;
     const {podDocument} = ledgersState && ledgersState || {};
@@ -28,8 +34,8 @@ export default function Ledger({marketRates}) {
 
 
     //handler passed to table, saves to pod and dispatches new pod doc and ledger thing
-    //don't let anythign else call setData
-    const setDataHandler = async (newData) => {
+    //don't let anything else call setData
+    const setDataHandler = async (newData: Trade[]) => {
 
         //detect deletes here :)
         const deletes = data.filter((d) => !newData.includes(d))
@@ -63,33 +69,37 @@ export default function Ledger({marketRates}) {
     const columns = React.useMemo(
         () => [
             {
-                Header: 'Amount',
-                accessor: 'amount',
+                Header: 'Out',
+                accessor: 'cost.amount',
+                // @ts-ignore
                 Cell: (table, cell) => {
                     //should have precision of the currency
                     return (<EditableNumericCell {...table} />)
                 },
             },
             {
-                Header: 'Coin',
-                accessor: 'currency',
+                Header: 'Out Currency',
+                accessor: 'cost.currency.symbol',
+                // @ts-ignore
                 Cell: (table, cell) => {
                     // console.log(table, cell)
                     // doesn't work because it updateMyData is needed here
                     // return (<CurrencySelect  label={""}></CurrencySelect>)
-                    return (<span>{table.value.name}</span>)
+                    return (<span>{table.value}</span>)
                 }
             },
             {
                 Header: 'In',
-                accessor: 'inAmount',
+                accessor: 'amount.amount',
+                // @ts-ignore
                 Cell: (table, cell) => {
                     return (<EditableNumericCell {...table} />)
                 },
             },
             {
                 Header: 'In Currency',
-                accessor: 'inCurrency',
+                accessor: 'amount.currency.symbol',
+                // @ts-ignore
                 Cell: (table, cell) => {
                     // console.log(table, cell)
                     // doesn't work because it updateMyData is needed here
@@ -99,24 +109,27 @@ export default function Ledger({marketRates}) {
             },
             {
                 Header: "Fee",
-                accessor: 'fee',
+                accessor: 'fee.amount',
+                // @ts-ignore
                 Cell: (table, cell) => {
                     return (<EditableNumericCell {...table} />)
                 },
-                Footer: info => {
-                    // Only calculate total visits if rows change
-                    const total = React.useMemo(
-                        // rows.value
-                        () =>
-                            info.rows.reduce((sum, row) => row.values.fee + sum, 0)
-                        // return computeMarketRate(trades, "USD", marketRates)
-                        // const trades = info.rows.map((i) => i.values)
-                        ,
-                        [info.rows]
-                    )
-
-                    return <>Total USD Value: ${total}</>
-                },
+                // // @ts-ignore
+                // Footer: info => {
+                //     // Only calculate total visits if rows change
+                //     const total = React.useMemo(
+                //         // rows.value
+                //         () =>
+                //             // @ts-ignore
+                //             info.rows.reduce((sum, row) => row.values.fee + sum, 0)
+                //         // return computeMarketRate(trades, "USD", marketRates)
+                //         // const trades = info.rows.map((i) => i.values)
+                //         ,
+                //         [info.rows]
+                //     )
+                //
+                //     return <>Total USD Value: ${total}</>
+                // },
             }
 
         ],
@@ -124,7 +137,7 @@ export default function Ledger({marketRates}) {
     )
 
     React.useEffect(() => {
-        setTotalValue(computeMarketRate(data, "USD", marketRates))
+        setTotalValue(computeMarketRate(data, USD, marketRates))
     }, [marketRates, data])
 
 
@@ -138,6 +151,7 @@ export default function Ledger({marketRates}) {
     // When our cell renderer calls updateMyData, we'll use
     // the rowIndex, columnId and new value to update the
     // original data
+    // @ts-ignore
     const updateMyData = (rowIndex, columnId, value) => {
         // We also turn on the flag to not reset the page
 
