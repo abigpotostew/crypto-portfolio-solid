@@ -14,7 +14,9 @@ const currencies = [USD]
 
 
 export const alwaysIncludeCoins = [
+    USD,
     cy("btc", "Bitcoin"),
-    cy("eth", "Ethereum"), cy("ltc", "Litecoin"),
+    cy("eth", "Ethereum"),
+    cy("ltc", "Litecoin"),
     cy("prq", "Parsiq"),
     cy("ada", "Cardano")]

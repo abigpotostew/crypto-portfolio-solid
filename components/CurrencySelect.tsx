@@ -3,15 +3,19 @@ import InputLabel from "@material-ui/core/InputLabel";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import React, {useState} from "react";
-import PropTypes from "prop-types";
-import AddTradeDialog from "./AddTradeDialog";
-import alwaysIncludeCoins from "../src/currencies";
+import {alwaysIncludeCoins} from "../src/currencies";
 
-const CurrencySelect = props => {
+export interface CurrencySelectProps {
+    onChangeHandler: (event: any, index: number, value: string) => any,
+    initialSelect: string,
+    label: string
+}
+
+export default function CurrencySelect(props: CurrencySelectProps) {
 
     const {onChangeHandler, initialSelect, label} = props
     const currencies = alwaysIncludeCoins
-    const initialValue = initialSelect || currencies[0].tradeName
+    const initialValue = initialSelect || currencies[0].symbol
 
     const [value, setValue] = React.useState(initialValue)
 
@@ -20,7 +24,7 @@ const CurrencySelect = props => {
     //     // setValue({value}, () => { console.log('New Value ', this.state.value); });
     //     onChangeHandler && onChangeHandler(event,index,value)
     // }
-    const handleChange = (event, index, value) => {
+    const handleChange = (event: any, index: number, value: string) => {
         setValue(event.target.value)
         // setValue({value}, () => { console.log('New Value ', this.state.value); });
         onChangeHandler && onChangeHandler(event, index, value)
@@ -34,10 +38,12 @@ const CurrencySelect = props => {
                 labelId="demo-simple-select-label"
                 // id="demo-simple-select"
                 value={value}
+
+                // @ts-ignore
                 onChange={handleChange}
             >
                 {currencies.map((v, idx) => (
-                        <MenuItem key={idx} value={v.tradeName}>{v.tradeName}</MenuItem>
+                        <MenuItem key={idx} value={v.symbol}>{v.symbol}</MenuItem>
                     )
                 )}
                 {/*<MenuItem value={10}>Ten</MenuItem>*/}
@@ -47,8 +53,7 @@ const CurrencySelect = props => {
         </FormControl>
     )
 }
-CurrencySelect.propTypes = {
-    onChangeHandler: PropTypes.func,
-}
 
-export default CurrencySelect
+// CurrencySelect.propTypes = {
+//     onChangeHandler: PropTypes.func,
+// }

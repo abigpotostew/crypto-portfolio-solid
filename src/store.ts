@@ -26,18 +26,24 @@ export class PodDocument {
     }
 }
 
-enum TradeType {
+export enum TradeType {
     BUY = 1,
     SELL,
     TRANSFER_IN,
     TRANSFER_OUT
 }
 
+export interface Price {
+    currency: Currency
+    amount: number
+}
+
 export interface Trade {
-    currency: Currency;
-    amount: number;
-    cost: number; //in dollars, fiat
-    fee: number; //always in fiat
+    amount: Price
+    cost: Price
+    fee: Price
+    // cost: number; //in dollars, fiat
+    // fee: number; //always in fiat
     url: string; //pod ref
     dateCreated: Date;
     dateModified: Date;
@@ -60,10 +66,9 @@ export function newTrade(
     tradeType: TradeType
 ): Trade {
     const out: Trade = {
-        currency: currency,
-        amount: amount,
-        cost: cost,
-        fee: fee,
+        amount: {amount: amount, currency: currency},
+        cost: {amount: cost, currency: USD},
+        fee: {amount: cost, currency: USD},
         url: url,
         dateCreated: dateCreated || new Date(),
         dateModified: dateModified || new Date(),
@@ -77,7 +82,6 @@ export function newTrade(
 
 export function newTradeC(t: Trade): Trade {
     const out: Trade = {
-        currency: t.currency,
         amount: t.amount,
         cost: t.cost,
         fee: t.fee,
@@ -134,17 +138,18 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
 
     //todo need to verify this incoming data which could be bad data
     const newData: Trade = {
-        // BTC
-        currency: new UncheckedCurrency(trade.getString(schema.priceCurrency) || "<missing>") as Currency,
-
-        // 0.001
-        amount: parseFloat(trade.getString(schema.price) || "0"),
+        // 0.001 BTC
+        amount: {
+            amount: parseFloat(trade.getString(schema.price) || "0"),
+            currency: new UncheckedCurrency(trade.getString(schema.priceCurrency) || "<missing>") as Currency,
+        },
 
         // $100.19
-        cost: parseFloat(outAmount.getString(schema.price) || "0"),
+        cost: {amount: parseFloat(outAmount.getString(schema.price) || "0"), currency: USD},
 
         // $1.11
-        fee: parseFloat(feeAmount.getString(schema.price) || "0"),
+        fee: {amount: parseFloat(feeAmount.getString(schema.price) || "0"), currency: USD},
+
         url: tradeSubject.asRef(),
         dateCreated: trade.getDateTime(schema.dateCreated) || new Date(0),
         dateModified: trade.getDateTime(schema.dateModified) || new Date(0),
@@ -253,7 +258,9 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
     tradeSubject.setRef(RDF.type, LedgerType.Trade)
     var now = moment().toDate()
     tradeSubject.setDateTime(schema.dateModified, now)
-    tradeSubject.setString(RDFS.comment, tradeData.comment)
+    tradeSubject.setString(RDFS.comment, tradeData.comment || "")
+    tradeSubject.setString(schema.price, String(tradeData.amount.amount))
+    tradeSubject.setString(schema.priceCurrency, tradeData.amount.currency.symbol)
 
     //set defaults
     setDataDefaults(tradeData)
@@ -263,7 +270,7 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
 
     const modifiedSubjects = new Array<TripleSubject>()
 
-    const addAmount = (schemaType: string, amountDecimal: number, currency?: Currency) => {
+    const addAmount = (schemaType: string, amount: Price) => {
 
         let amountSubject: TripleSubject | undefined = getPriceSpecSubject(podDocument.doc, tradeSubject, schemaType)
 
@@ -275,12 +282,12 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
         amountSubject.setRef(RDF.type, schema.PriceSpecification)
         amountSubject.setRef(schema.additionalType, schemaType)
         tradeSubject.addRef(schema.priceSpecification, amountSubject.asRef())
-        if (currency) amountSubject.setString(schema.priceCurrency, currency.symbol)
-        amountSubject.setString(schema.price, String(amountDecimal))
+        amountSubject.setString(schema.priceCurrency, amount.currency.symbol)
+        amountSubject.setString(schema.price, String(amount.amount))
         amountSubject ? modifiedSubjects.push(amountSubject) : null;
     }
 
-    addAmount(LedgerType.outAmount, tradeData.amount, tradeData.currency)
+    addAmount(LedgerType.outAmount, tradeData.amount)
     addAmount(LedgerType.feeAmount, tradeData.fee)
     modifiedSubjects.push(tradeSubject)
     return modifiedSubjects

@@ -90,7 +90,7 @@ const CoinLayout = () => {
             let trades = getAllTradesDataFromDoc(podDocument)
             const uniqueCurrencies = new Set<Currency>();
             trades.forEach((t) => {
-                uniqueCurrencies.add(t.currency)
+                uniqueCurrencies.add(t.amount.currency)
             })
             //todo remove all non-crypto currencies
             let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t) => t.symbol !== "USD")

@@ -74,12 +74,12 @@ export default function CoinPortfolio({marketRates}: CoinPortfolioProps) {
                 accessor: 'amount',// @ts-ignore
                 // @ts-ignore
                 Cell: (table, cell) => {
-                    return (<span>{table.value}</span>)
+                    return (<span>{table.value.amount}</span>)
                 }
             },
             {
                 Header: 'Coin',
-                accessor: 'currency',
+                accessor: 'amount.currency',
                 // @ts-ignore
                 Cell: (table, cell) => {
                     return (<span>{table.value.symbol}</span>)
@@ -90,7 +90,7 @@ export default function CoinPortfolio({marketRates}: CoinPortfolioProps) {
                 accessor: 'cost',
                 // @ts-ignore
                 Cell: (table, cell) => {
-                    return (<span>${table.value}</span>)
+                    return (<span>${table.value.amount}</span>)
                 }
             },
             {
@@ -98,7 +98,7 @@ export default function CoinPortfolio({marketRates}: CoinPortfolioProps) {
                 accessor: 'fee',
                 // @ts-ignore
                 Cell: (table, cell) => {
-                    return (<span>${table.value}</span>)
+                    return (<span>${table.value.amount}</span>)
                 }
             }
 

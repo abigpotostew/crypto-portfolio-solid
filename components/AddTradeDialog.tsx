@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, {useState} from 'react'
 
 import AddIcon from '@material-ui/icons/Add'
 import Button from '@material-ui/core/Button'
@@ -8,46 +8,52 @@ import DialogContent from '@material-ui/core/DialogContent'
 import DialogContentText from '@material-ui/core/DialogContentText'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import IconButton from '@material-ui/core/IconButton'
-import PropTypes from 'prop-types'
 import Switch from '@material-ui/core/Switch'
 import TextField from '@material-ui/core/TextField'
 import Tooltip from '@material-ui/core/Tooltip'
 
-import { makeStyles } from '@material-ui/core/styles';
+import {makeStyles} from '@material-ui/core/styles';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import CurrencySelect from "./CurrencySelect";
+import {newTrade, Trade, TradeType} from "../src/store";
+import {UncheckedCurrency} from "../src/marketdata/provider";
 
 const initialData = {
-    outCurrency: 'USD',
-    outAmount: 0.0,
-    inCurrency: 'BTC',
+    costCurrency: 'USD',
+    costAmount: 0.0,
+    inCurrency: 'btc',
     inAmount: 0.0,
-    fee:0.0,
-    feeCoin:'USD',
+    fee: 0.0,
+    feeCoin: 'USD',
     // status: 'single',
     // progress: 0,
     // subRows: undefined,
 }
 
-const AddTradeDialog = props => {
+export interface AddTradeDialogProps {
+    addTradeHandler: (t: Trade) => any,
+}
+
+export default function AddTradeDialog(props: AddTradeDialogProps) {
     const [trade, setTrade] = useState(initialData)
-    const { addTradeHandler } = props
+    const {addTradeHandler} = props
     const [open, setOpen] = React.useState(false)
 
     const [switchState, setSwitchState] = React.useState({
         addMultiple: false,
     })
 
+    // @ts-ignore
     const handleSwitchChange = name => event => {
-        setSwitchState({ ...switchState, [name]: event.target.checked })
+        setSwitchState({...switchState, [name]: event.target.checked})
     }
 
     const resetSwitch = () => {
-        setSwitchState({ addMultiple: false })
+        setSwitchState({addMultiple: false})
     }
 
     const handleClickOpen = () => {
@@ -59,33 +65,38 @@ const AddTradeDialog = props => {
         resetSwitch()
     }
 
+    // @ts-ignore
     const handleAdd = event => {
-        addTradeHandler(trade)
+        const newT = newTrade(new UncheckedCurrency(trade.inCurrency), trade.inAmount, trade.costAmount, trade.fee, "", new Date(), new Date(), "", "", TradeType.BUY)
+        addTradeHandler(newT)
         setTrade(initialData)
         switchState.addMultiple ? setOpen(true) : setOpen(false)
     }
 
-    const doParseValue = (s) =>{
+    const doParseValue = (s: string) => {
         let v = parseFloat(s)
-        if (isNaN(v)){
+        if (isNaN(v)) {
             v = 0.0
         }
         return v
     }
-    const handleChange = (name,isNumeric) => ({target:{value}}) => {
+    // @ts-ignore
+    const handleChange = (name: string, isNumeric: boolean) => ({target: {value}}) => {
         //need to convert some to numbers
-        if (isNumeric){
-            value = doParseValue(value)
+        let v = 0
+        if (isNumeric) {
+            v = doParseValue(value)
         }
-        console.log("yo",name, "is now", value)
-        setTrade({ ...trade, [name]: value })
+        console.log("yo", name, "is now", v)
+        setTrade({...trade, [name]: v})
     }
 
+    // @ts-ignore
     return (
         <div>
             <Tooltip title="Add">
                 <IconButton aria-label="add" onClick={handleClickOpen}>
-                    <AddIcon />
+                    <AddIcon/>
                 </IconButton>
             </Tooltip>
             <Dialog
@@ -99,8 +110,9 @@ const AddTradeDialog = props => {
 
                     <CurrencySelect
                         label={"Out"}
-                        initialSelect={initialData.outCurrency}
-                        onChangeHandler={handleChange('outCurrency')}
+                        initialSelect={initialData.costCurrency}
+
+                        onChangeHandler={handleChange('outCurrency', false)}
                     />
 
                     {/*<TextField*/}
@@ -117,7 +129,7 @@ const AddTradeDialog = props => {
                         label="Out Amount"
                         type="number"
                         fullWidth
-                        value={trade.outAmount}
+                        value={trade.costAmount}
                         onChange={handleChange('outAmount', true)}
                     />
                     {/*<TextField*/}
@@ -131,7 +143,7 @@ const AddTradeDialog = props => {
                     <CurrencySelect
                         label={"In"}
                         initialSelect={initialData.inCurrency}
-                        onChangeHandler={handleChange('inCurrency')} />
+                        onChangeHandler={handleChange('inCurrency', false)}/>
                     <TextField
                         margin="dense"
                         label="In Amount"
@@ -160,7 +172,7 @@ const AddTradeDialog = props => {
                     <CurrencySelect
                         label={"Fee"}
                         initialSelect={initialData.feeCoin}
-                        onChangeHandler={handleChange('feeCoin')} />
+                        onChangeHandler={handleChange('feeCoin', false)}/>
 
                 </DialogContent>
                 <DialogActions>
@@ -169,7 +181,7 @@ const AddTradeDialog = props => {
                             checked={switchState.addMultiple}
                             onChange={handleSwitchChange('addMultiple')}
                             value="addMultiple"
-                            inputProps={{ 'aria-label': 'secondary checkbox' }}
+                            inputProps={{'aria-label': 'secondary checkbox'}}
                         />
                     </Tooltip>
                     <Button onClick={handleClose} color="primary">
@@ -183,9 +195,7 @@ const AddTradeDialog = props => {
         </div>
     )
 }
-
-AddTradeDialog.propTypes = {
-    addTradeHandler: PropTypes.func.isRequired,
-}
-
-export default AddTradeDialog
+//
+// AddTradeDialog.propTypes = {
+//     addTradeHandler: PropTypes.func.isRequired,
+// }
