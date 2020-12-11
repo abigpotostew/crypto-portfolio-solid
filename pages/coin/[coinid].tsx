@@ -16,6 +16,7 @@ const CoinLayout = () => {
 
     const router = useRouter()
     const {coinid} = router.query
+    const coinName = (typeof coinid === "string" && coinid || undefined)
 
     //TODO this is all duplicate, figure out where to put this stuff, probably in it's own effect wrapper
     const myWebId = useWebId()
@@ -115,7 +116,7 @@ const CoinLayout = () => {
             <p>{myWebId}</p>
             <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
             <p>Coin ID: {coinid}</p>
-            {myWebId && coinid && <CoinPortfolio coinId={coinid} marketRates={marketRates}></CoinPortfolio>}
+            {myWebId && coinid && <CoinPortfolio coinId={coinName || ""} marketRates={marketRates}></CoinPortfolio>}
         </div>
     )
 }
