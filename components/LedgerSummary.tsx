@@ -1,30 +1,26 @@
-import React from "react"
-
-import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
-import computeMarketRate, {NewCompute} from "../src/compute";
-import {USD} from "../src/currencies";
-import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
+import {Currencies, MarketRates} from "../src/marketdata/provider";
 import AppContext from "../contexts/AppContext";
+import {getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade} from "../src/store";
+import React from "react"
+import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
+import computeMarketRate, {MarketHolding, NewCompute} from "../src/compute";
+import {USD} from "../src/currencies";
 import {getPodFromWebId} from "./Ledgers";
-import {Currencies, Currency, MarketRates, UncheckedCurrency} from "../src/marketdata/provider";
 
-interface CoinPortfolioProps {
+interface LedgerSummaryProps {
     marketRates: MarketRates
-    coinId: string
     currencies: Currencies
 }
 
-export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPortfolioProps) {
-
+export default function LedgerSummary({marketRates, currencies}: LedgerSummaryProps) {
     // @ts-ignore
     const {state, dispatch} = React.useContext(AppContext);
     const {webId, ledgersState} = state;
     const {podDocument} = ledgersState && ledgersState || {};
 
-    const [compute] = React.useState(NewCompute())
-    const [coin, setCoin] = React.useState<Currency>(new UncheckedCurrency(coinId))
+    const [compute] = React.useState(NewCompute);
+    const [summaryData, setSummaryData] = React.useState(new Array<MarketHolding>());
 
-    //TODO figure out where this data should come from in a reused way
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
         console.log("loaded data from memo")
@@ -37,10 +33,55 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
         console.log("done setting data from doc trades")
     }, [podDocument])
 
+    React.useEffect(() => {
+        setSummaryData(compute.holdings(data, USD, marketRates, currencies))
+    }, [data, marketRates, currencies])
 
-    //handler passed to table, saves to pod and dispatches new pod doc and ledger thing
-    //don't let anythign else call setData
+
+    const [skipPageReset, setSkipPageReset] = React.useState(false)
+
+    const columns = React.useMemo(
+        () => [
+            {
+                Header: 'Coin',
+                accessor: 'currency.symbol',
+                // @ts-ignore
+                Cell: (table, cell) => {
+                    //should have precision of the currency
+                    return (<span>{table.value}</span>)
+                },
+            },
+            {
+                Header: 'Amount',
+                accessor: 'totalHoldings',
+                // @ts-ignore
+                Cell: (table, cell) => {
+                    // console.log(table, cell)
+                    // doesn't work because it updateMyData is needed here
+                    // return (<CurrencySelect  label={""}></CurrencySelect>)
+                    return (<span>{table.value}</span>)
+                }
+            },
+            {
+                Header: 'Fiat',
+                accessor: 'totalMarketHoldings',
+                // @ts-ignore
+                Cell: (table, cell) => {
+                    return (<span>${table.value}</span>)
+                },
+            },
+
+        ],
+        []
+    )
+
+    // React.useEffect(() => {
+    //     setTotalValue(computeMarketRate(data, USD, marketRates))
+    // }, [marketRates, data])
+
     const setDataHandler = async (newData: Trade[]) => {
+        // console.error("cannot update data from summary at this time")
+        // return
 
         //detect deletes here :)
         const deletes = data.filter((d) => !newData.includes(d))
@@ -69,6 +110,9 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
     }
     const deleteDataHandler = async (deletes: Trade[]) => {
 
+        console.error("cannot delete from the summary page")
+        return
+        
         for (let i = 0; i < deletes.length; ++i) {
             const toDelete = deletes[i]
             for (let j = 0; j < data.length; ++j) {
@@ -90,72 +134,17 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
 
     }
 
-    //todo the data is not coming in from tripledoc
-    // const data = React.useMemo(() => tradesData, [tradesData])
-    // const setData = console.error
-    const [skipPageReset, setSkipPageReset] = React.useState(false)
+    // @ts-ignore
+    const updateMyData = (rowIndex, columnId, value) => {
 
-    const [totalValue, setTotalValue] = React.useState(0)
+        console.error("cannot update data from summary at this time")
+        return
 
-    const columns = React.useMemo(
-        () => [
-            {
-                Header: 'Amount',
-                accessor: 'amount',// @ts-ignore
-                // @ts-ignore
-                Cell: (table, cell) => {
-                    return (<span>{table.value.amount}</span>)
-                }
-            },
-            {
-                Header: 'Coin',
-                accessor: 'amount.currency',
-                // @ts-ignore
-                Cell: (table, cell) => {
-                    return (<span>{table.value.symbol}</span>)
-                }
-            },
-            {
-                Header: 'Cost',
-                accessor: 'cost',
-                // @ts-ignore
-                Cell: (table, cell) => {
-                    return (<span>${table.value.amount}</span>)
-                }
-            },
-            {
-                Header: "Fee",
-                accessor: 'fee',
-                // @ts-ignore
-                Cell: (table, cell) => {
-                    return (<span>${table.value.amount}</span>)
-                }
-            }
-
-        ],
-        []
-    )
-
-    React.useEffect(() => {
-        setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
-    }, [marketRates, data])
-
-
-    // We need to keep the table from resetting the pageIndex when we
-    // Update data. So we can keep track of that flag with a ref.
-
-    // When our cell renderer calls updateMyData, we'll use
-    // the rowIndex, columnId and new value to update the
-    // original data
-    const updateMyData = (rowIndex: number, columnId: any, value: any) => {
         // We also turn on the flag to not reset the page
-
         // update it in pod now
-
         setSkipPageReset(true)
         console.log("my data is updating")
 
-        //might get into async problems using data directly, should use state hook prior state
         setDataHandler(data.map((row, index) => {
             if (index === rowIndex) {
                 return {
@@ -167,14 +156,15 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
             return row
         }))
         console.log("my data is updated")
+
+        // setTotalValue(computeMarketRate(data, "USD", marketRates))
+
     }
 
-
     return (<div>
-        <p>{coin.name} Holdings Market Value: {totalValue}</p>
         <EnhancedTable
             columns={columns}
-            data={data}
+            data={summaryData}
             // setData={setDataHandler} // add, remove delete table action
             addData={addDataHandler} // add, remove delete table action
             deleteData={deleteDataHandler} // add, remove delete table action
@@ -182,7 +172,7 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
             skipPageReset={skipPageReset}
         />
 
+        {/*<p>Total Portfolio Value: {totalValue}</p>*/}
 
     </div>)
-
 }

@@ -6,19 +6,19 @@ import {USD} from "../src/currencies";
 import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
-import {MarketRates} from "../src/marketdata/provider";
+import {Currencies, MarketRates} from "../src/marketdata/provider";
 
 interface LedgerProps {
     marketRates: MarketRates
+    currencies: Currencies
 }
 
-export default function Ledger({marketRates}: LedgerProps) {
+export default function Ledger({marketRates, currencies}: LedgerProps) {
 
     // @ts-ignore
     const {state, dispatch} = React.useContext(AppContext);
     const {webId, ledgersState} = state;
     const {podDocument} = ledgersState && ledgersState || {};
-
 
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
@@ -137,7 +137,7 @@ export default function Ledger({marketRates}: LedgerProps) {
     )
 
     React.useEffect(() => {
-        setTotalValue(computeMarketRate(data, USD, marketRates))
+        setTotalValue(computeMarketRate(data, USD, marketRates, currencies))
     }, [marketRates, data])
 
 

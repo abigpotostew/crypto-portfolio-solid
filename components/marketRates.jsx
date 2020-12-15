@@ -1,4 +1,4 @@
-import {useState,useEffect} from "react"
+import {useState, useEffect} from "react"
 import React from "react"
 
 export default function MarketRatesTicker({rates}) {
@@ -11,6 +11,6 @@ export default function MarketRatesTicker({rates}) {
 
     // assume USD
     return (
-        <p>${rates.get("ETH","USD")} / ETH</p>
+        <p>${rates.get("USD", "ETH")} / ETH</p>
     )
 }

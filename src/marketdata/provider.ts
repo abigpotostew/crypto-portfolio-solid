@@ -15,7 +15,7 @@ export interface Currencies {
     getAll(): Currency[]
 
     //Get by id, name, or symbol
-    get(id: string): Currency | null
+    get(id: string | Currency): Currency | null
 }
 
 export interface Currency {
@@ -119,8 +119,16 @@ class CoinGecko implements Provider {
         //todo return internal state
         const idMap = this.symbolMap
         return {
-            get(symbol: string): Currency | null {
-                return idMap.get(symbol.toLowerCase()) || null
+            get(symbol: string | Currency): Currency | null {
+                if (typeof symbol === "string") {
+                    return idMap.get(symbol.toLowerCase()) || idMap.get(symbol) || null
+                } else {
+                    return idMap.get(symbol.symbol.toLowerCase()) ||
+                        idMap.get(symbol.symbol) ||
+                        idMap.get(symbol.id.toLowerCase()) ||
+                        idMap.get(symbol.id) ||
+                        null;
+                }
             },
             getAll(): Currency[] {
                 return Array.from(idMap.values())
@@ -166,7 +174,7 @@ class CoinGecko implements Provider {
                                     if (!out) {
                                         throw new Error(`unsupported currency: '${outCurrencyStr}'`)
                                     } else {
-                                        return forUsd.get(outCurrencyStr.toLowerCase()) || 0.0
+                                        return forUsd.get(inCurrencyStr.toLowerCase()) || 0.0
                                     }
                                 },
                                 pending: () => false

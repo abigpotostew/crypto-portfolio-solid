@@ -1,6 +1,7 @@
 import {getAllTradesDataFromDoc, getLedgerDoc,} from "../src/store";
 import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
+import LedgerSummary from "./LedgerSummary";
 import React from "react"
 import AppContext from "../contexts/AppContext";
 import {coinGeckoProvider} from "../src/marketdata/provider";
@@ -47,7 +48,7 @@ export default function Ledgers() {
         if (isTickerActive) {
             interval = setInterval(() => {
                 //get market rates
-                getMarketRates()
+                if (document.hasFocus()) getMarketRates()
             }, 10000); ///todo make a call out in an effect
         } else if (!isTickerActive) {
             clearInterval(interval);
@@ -121,7 +122,7 @@ export default function Ledgers() {
     return (
         <div>
             {/*todo tell this ledger which ledger subject to use*/}
-            {podDocument && <Ledger marketRates={marketRates}/>}
+            {podDocument && <LedgerSummary marketRates={marketRates} currencies={currencyProvider.getCurrencies()}/>}
             <MarketRatesTicker rates={marketRates}/>
 
 

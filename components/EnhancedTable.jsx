@@ -22,7 +22,7 @@ import {
 } from 'react-table'
 
 const IndeterminateCheckbox = React.forwardRef(
-    ({ indeterminate, ...rest }, ref) => {
+    ({indeterminate, ...rest}, ref) => {
         const defaultRef = React.useRef()
         const resolvedRef = ref || defaultRef
 
@@ -48,8 +48,8 @@ const inputStyle = {
 // Create an editable cell renderer
 const EditableCell = ({
                           value: initialValue,
-                          row: { index },
-                          column: { id },
+                          row: {index},
+                          column: {id},
                           updateMyData, // This is a custom function that we supplied to our table instance
                       }) => {
     // We need to keep and update the state of the cell normally
@@ -94,17 +94,17 @@ EditableCell.propTypes = {
 
 // Create an editable numeric cell renderer
 export const EditableNumericCell = ({
-                          value: initialValue,
-                          row: { index },
-                          column: { id },
-                          updateMyData, // This is a custom function that we supplied to our table instance
-                      }) => {
+                                        value: initialValue,
+                                        row: {index},
+                                        column: {id},
+                                        updateMyData, // This is a custom function that we supplied to our table instance
+                                    }) => {
     // We need to keep and update the state of the cell normally
     const [value, setValue] = React.useState(initialValue)
 
-    const doParseValue = (s) =>{
+    const doParseValue = (s) => {
         let v = parseFloat(s)
-        if (isNaN(v)){
+        if (isNaN(v)) {
             v = 0.0
         }
         return v
@@ -171,7 +171,8 @@ const defaultColumn = {
 const EnhancedTable = ({
                            columns,
                            data,
-                           setData,
+                           // setData,
+                           deleteData, addData,
                            updateMyData,
                            skipPageReset,
                        }) => {
@@ -185,7 +186,7 @@ const EnhancedTable = ({
         setPageSize,
         preGlobalFilteredRows,
         setGlobalFilter,
-        state: { pageIndex, pageSize, selectedRowIds, globalFilter },
+        state: {pageIndex, pageSize, selectedRowIds, globalFilter},
     } = useTable(
         {
             columns,
@@ -214,14 +215,14 @@ const EnhancedTable = ({
                     // be server side pagination.  For one, the clients should not download all
                     // rows in most cases.  The client should only download data for the current page.
                     // In that case, getToggleAllRowsSelectedProps works fine.
-                    Header: ({ getToggleAllRowsSelectedProps }) => (
+                    Header: ({getToggleAllRowsSelectedProps}) => (
                         <div>
                             <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
                         </div>
                     ),
                     // The cell can use the individual row's getToggleRowSelectedProps method
                     // to the render a checkbox
-                    Cell: ({ row }) => (
+                    Cell: ({row}) => (
                         <div>
                             <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
                         </div>
@@ -240,20 +241,15 @@ const EnhancedTable = ({
         setPageSize(Number(event.target.value))
     }
 
-    const removeByIndexs = (array, indexs) =>
-        array.filter((_, i) => !indexs.includes(i))
-
     const deleteTradeHandler = event => {
-        const newData = removeByIndexs(
-            data,
-            Object.keys(selectedRowIds).map(x => parseInt(x, 10))
-        )
-        setData(newData)
+        const rowsIdsToDelete = Object.keys(selectedRowIds).map(x => parseInt(x, 10))
+        const deletes = data.filter((_, i) => rowsIdsToDelete.includes(i))
+
+        deleteData(deletes)
     }
 
     const addTradeHandler = trade => {
-        const newData = data.concat([trade])
-        setData(newData)
+        addData([trade])
     }
 
     // Render the UI for your table
@@ -330,7 +326,7 @@ const EnhancedTable = ({
                             rowsPerPage={pageSize}
                             page={pageIndex}
                             SelectProps={{
-                                inputProps: { 'aria-label': 'rows per page' },
+                                inputProps: {'aria-label': 'rows per page'},
                                 native: true,
                             }}
                             onChangePage={handleChangePage}
@@ -348,7 +344,9 @@ EnhancedTable.propTypes = {
     columns: PropTypes.array.isRequired,
     data: PropTypes.array.isRequired,
     updateMyData: PropTypes.func.isRequired,
-    setData: PropTypes.func.isRequired,
+    // setData: PropTypes.func.isRequired,
+    addData: PropTypes.func.isRequired,
+    deleteData: PropTypes.func.isRequired,
     skipPageReset: PropTypes.bool.isRequired,
 }
 

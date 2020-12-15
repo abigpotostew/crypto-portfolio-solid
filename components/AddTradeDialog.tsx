@@ -112,7 +112,7 @@ export default function AddTradeDialog(props: AddTradeDialogProps) {
                         label={"Out"}
                         initialSelect={initialData.costCurrency}
 
-                        onChangeHandler={handleChange('outCurrency', false)}
+                        onChangeHandler={handleChange('costCurrency', false)}
                     />
 
                     {/*<TextField*/}
@@ -130,7 +130,7 @@ export default function AddTradeDialog(props: AddTradeDialogProps) {
                         type="number"
                         fullWidth
                         value={trade.costAmount}
-                        onChange={handleChange('outAmount', true)}
+                        onChange={handleChange('costAmount', true)}
                     />
                     {/*<TextField*/}
                     {/*    margin="dense"*/}

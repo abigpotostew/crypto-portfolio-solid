@@ -67,7 +67,7 @@ export function newTrade(
 ): Trade {
     const out: Trade = {
         amount: {amount: amount, currency: currency},
-        cost: {amount: cost, currency: USD},
+        cost: {amount: cost, currency: USD}, //todo support coins
         fee: {amount: cost, currency: USD},
         url: url,
         dateCreated: dateCreated || new Date(),
