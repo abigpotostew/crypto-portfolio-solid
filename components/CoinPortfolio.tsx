@@ -7,6 +7,7 @@ import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Tra
 import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
 import {Currencies, Currency, MarketRates, UncheckedCurrency} from "../src/marketdata/provider";
+import TimeStamp from "./date/TimeStamp";
 
 interface CoinPortfolioProps {
     marketRates: MarketRates
@@ -100,6 +101,14 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
     const columns = React.useMemo(
         () => [
             {
+                Header: 'Date',
+                accessor: 'dateCreated',// @ts-ignore
+                // @ts-ignore
+                Cell: (table, cell) => {
+                    return (<TimeStamp date={table.value}/>)
+                }
+            },
+            {
                 Header: 'Amount',
                 accessor: 'amount',// @ts-ignore
                 // @ts-ignore
@@ -137,8 +146,10 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
     )
 
     React.useEffect(() => {
-        setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
-    }, [marketRates, data])
+        if (currencies.getAll().length > 0) {
+            setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
+        }
+    }, [marketRates, data, currencies])
 
 
     // We need to keep the table from resetting the pageIndex when we

@@ -27,6 +27,7 @@ export default function Ledgers() {
     const [supportedCurrencies, setSupportedCurrencies] = React.useState(alwaysIncludeCoins)
     const [marketRates, setMarketRates] = React.useState(currencyProvider.getLatestMarketRates())
 
+    const [currenciesReady, setCurrenciesReady] = React.useState(false)
 
     const getMarketRates = () => {
         currencyProvider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
@@ -36,6 +37,7 @@ export default function Ledgers() {
                 setIsTickerActive(false)
             } else {
                 setMarketRates(rates)
+                setCurrenciesReady(true)
                 //coinbase requires merge
             }
         })
@@ -122,7 +124,8 @@ export default function Ledgers() {
     return (
         <div>
             {/*todo tell this ledger which ledger subject to use*/}
-            {podDocument && <LedgerSummary marketRates={marketRates} currencies={currencyProvider.getCurrencies()}/>}
+            {podDocument && currenciesReady &&
+            <LedgerSummary marketRates={marketRates} currencies={currencyProvider.getCurrencies()}/>}
             <MarketRatesTicker rates={marketRates}/>
 
 

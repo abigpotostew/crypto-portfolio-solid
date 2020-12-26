@@ -6,6 +6,7 @@ import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate, {MarketHolding, NewCompute} from "../src/compute";
 import {USD} from "../src/currencies";
 import {getPodFromWebId} from "./Ledgers";
+import TickerSymbolLink from "./currency/TickerSymbolLink";
 
 interface LedgerSummaryProps {
     marketRates: MarketRates
@@ -44,11 +45,11 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
         () => [
             {
                 Header: 'Coin',
-                accessor: 'currency.symbol',
+                accessor: 'currency',
                 // @ts-ignore
                 Cell: (table, cell) => {
                     //should have precision of the currency
-                    return (<span>{table.value}</span>)
+                    return (<TickerSymbolLink currency={table.value}/>)
                 },
             },
             {
@@ -112,26 +113,6 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
 
         console.error("cannot delete from the summary page")
         return
-        
-        for (let i = 0; i < deletes.length; ++i) {
-            const toDelete = deletes[i]
-            for (let j = 0; j < data.length; ++j) {
-                if (toDelete.url === data[j].url) {
-
-                }
-            }
-        }
-        const newData = data.filter((t, i) => {
-            for (let i = 0; i < deletes.length; ++i) {
-                if (deletes[i].url === t.url) {
-                    return false
-                }
-            }
-            return true
-        })
-
-        setDataHandler(newData)
-
     }
 
     // @ts-ignore
@@ -158,7 +139,6 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
         console.log("my data is updated")
 
         // setTotalValue(computeMarketRate(data, "USD", marketRates))
-
     }
 
     return (<div>

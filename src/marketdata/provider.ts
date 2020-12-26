@@ -119,6 +119,9 @@ class CoinGecko implements Provider {
         //todo return internal state
         const idMap = this.symbolMap
         return {
+            // @ts-ignore
+            idMap: idMap,
+            
             get(symbol: string | Currency): Currency | null {
                 if (typeof symbol === "string") {
                     return idMap.get(symbol.toLowerCase()) || idMap.get(symbol) || null

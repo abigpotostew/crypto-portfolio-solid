@@ -10,6 +10,7 @@ import styles from "../../styles/Home.module.css"
 import {AuthButton} from "@solid/react"
 import {useWebId} from "../../src/solid";
 import CoinPortfolio from "../../components/CoinPortfolio";
+import Link from 'next/link'
 
 const CoinLayout = () => {
 
@@ -113,8 +114,10 @@ const CoinLayout = () => {
     //todo show trades filted to this coin, and if valid coin only
     return (
         <div className={styles.container}>
+            <Link href={"/"}>Home</Link>
             <p>{myWebId}</p>
             <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
+
             <p>Coin ID: {coinid}</p>
             {myWebId && coinid &&
             <CoinPortfolio coinId={coinName || ""} marketRates={marketRates} currencies={currencies}></CoinPortfolio>}
