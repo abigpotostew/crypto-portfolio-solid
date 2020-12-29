@@ -6,6 +6,7 @@ import React from "react"
 import AppContext from "../contexts/AppContext";
 import {coinGeckoProvider} from "../src/marketdata/provider";
 import {alwaysIncludeCoins} from "../src/currencies";
+import {useCurrencies, useMarketRates, useTrades} from "../src/marketdata/effect";
 
 export function getPodFromWebId(webId, path = 'public') {
     const a = document.createElement('a');
@@ -21,27 +22,45 @@ export default function Ledgers() {
     const {podDocument} = ledgersState && ledgersState || {};
 
     const [isTickerActive, setIsTickerActive] = React.useState(false);
-    const [currencyProvider] = React.useState(coinGeckoProvider())
+    const [provider] = React.useState(coinGeckoProvider())
 
-    const [currencies, setCurrencies] = React.useState(currencyProvider.getCurrencies())
-    const [supportedCurrencies, setSupportedCurrencies] = React.useState(alwaysIncludeCoins)
-    const [marketRates, setMarketRates] = React.useState(currencyProvider.getLatestMarketRates())
 
-    const [currenciesReady, setCurrenciesReady] = React.useState(false)
+    // const {
+    //     data: currencies,
+    //     loading: currenciesLoading,
+    //     error: currenciesError
+    // } = useCurrencies({provider: provider})
 
-    const getMarketRates = () => {
-        currencyProvider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
-            if (err) {
-                console.error(err)
-                console.error("stopping market rates ticker")
-                setIsTickerActive(false)
-            } else {
-                setMarketRates(rates)
-                setCurrenciesReady(true)
-                //coinbase requires merge
-            }
-        })
-    }
+    // const [supportedCurrencies, setSupportedCurrencies] = React.useState(alwaysIncludeCoins)
+    // const [marketRates, setMarketRates] = React.useState(provider.getLatestMarketRates())
+
+
+    const {
+        marketRates,
+        trades,
+        loading,
+        error
+    } = useMarketRates({provider: provider})
+
+    // //set supported currenceis from trades
+    // React.useEffect(() => {
+    //     //if currencies are empty
+    //     setSupportedCurrencies(Array.from(uniqueCurrencies).concat(alwaysIncludeCoins))
+    //
+    // }, [trades]) // <-- empty dependency array
+
+
+    // const getMarketRates = () => {
+    //     provider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
+    //         if (err) {
+    //             console.error(err)
+    //             console.error("stopping market rates ticker")
+    //             setIsTickerActive(false)
+    //         } else {
+    //             setMarketRates(rates)
+    //         }
+    //     })
+    // }
 
     // start market rates ticker
     React.useEffect(() => {
@@ -60,72 +79,22 @@ export default function Ledgers() {
 
 
     // initial market rates query, one time only
-    React.useEffect(() => {
-        //if currencies are empty
-        if (currencies.getAll().length === 0) {
-            currencyProvider.fetchCurrencies((err) => {
-                setCurrencies(currencyProvider.getCurrencies())
-                getMarketRates()
-                setIsTickerActive(true)
-                // fetch market rates
-            })
-        } else {
-            getMarketRates()
-        }
-        // then fetch market rates
-        // then start the timer using set ticker
-        // do stuff here...
-
-    }, [supportedCurrencies]) // <-- empty dependency array
-
-
-    // React.useEffect(()=>{
-    //     console.log("fetching market rates from supported currencies")
-    //     if (!marketRates.pending()) getMarketRates()
-    // },[supportedCurrencies])
-
-    React.useEffect(() => {
-        async function fetchLedgers() {
-            const ledgerContainerUri = getPodFromWebId(webId, "private")
-            const podDocument = await getLedgerDoc(ledgerContainerUri);
-
-            console.log("trades now", getAllTradesDataFromDoc(podDocument))
-
-            let trades = getAllTradesDataFromDoc(podDocument)
-            const uniqueCurrencies = new Set();
-            trades.forEach((t) => {
-                // uniqueCurrencies.add(t.feeCoin)
-                uniqueCurrencies.add(t.amount.currency)
-                // uniqueCurrencies.add(t.inCurrency)
-            })
-            //todo remove all non-crypto currencies
-            let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t) => t !== "USD")
-            uniqueCryptoCoins.push(...alwaysIncludeCoins)
-
-            setSupportedCurrencies(uniqueCryptoCoins)
-
-            dispatch({
-                type: 'set_ledgers_state',
-                payload: {"podDocument": podDocument}
-            });
-        }
-
-        if (webId !== null) {
-            fetchLedgers();
-        }
-    }, [webId]);
-
-
-    // const createLedgerHandler = async ({ name = "Cryptocurrency Ledger"}) => {
-    //     await createLedger(name, ledgerContainerUri, mutateLedgers)
-    // }
+    // React.useEffect(() => {
+    //     //if currencies are empty
+    //
+    //     if (!currenciesLoading && currencies.getAll().length > 0) {
+    //         getMarketRates()
+    //         setIsTickerActive(true)
+    //     }
+    //
+    // }, [supportedCurrencies]) // <-- empty dependency array
 
 
     return (
         <div>
             {/*todo tell this ledger which ledger subject to use*/}
-            {podDocument && currenciesReady &&
-            <LedgerSummary marketRates={marketRates} currencies={currencyProvider.getCurrencies()}/>}
+            {podDocument && !loading &&
+            <LedgerSummary marketRates={marketRates} currencies={provider.getCurrencies()}/>}
             <MarketRatesTicker rates={marketRates}/>
 
 

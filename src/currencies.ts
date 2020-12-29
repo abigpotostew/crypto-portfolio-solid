@@ -1,7 +1,7 @@
-import {Currency, SCurrency} from "./marketdata/provider";
+import {Currency, ValidCurrency} from "./marketdata/provider";
 
 const cy = (tradeName: string, label: string): Currency => {
-    return new SCurrency(tradeName, tradeName, label)
+    return new ValidCurrency(tradeName, tradeName, label)
 }
 
 export const USD = cy("USD", "US Dollar")

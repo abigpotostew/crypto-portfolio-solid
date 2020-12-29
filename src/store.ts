@@ -18,6 +18,7 @@ export const LedgerType = {
     feeAmount: `${cryptledgerNs}feePriceSpecification`,
 };
 
+
 export class PodDocument {
     doc: TripleDocument;
 

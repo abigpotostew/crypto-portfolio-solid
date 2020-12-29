@@ -1,4 +1,4 @@
-export function appReducer(state, { type, payload }) {
+export function appReducer(state, {type, payload}) {
     console.log(type, payload);
     switch (type) {
         case 'set_web_id':

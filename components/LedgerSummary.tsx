@@ -35,7 +35,9 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
     }, [podDocument])
 
     React.useEffect(() => {
-        setSummaryData(compute.holdings(data, USD, marketRates, currencies))
+        if (currencies.getAll().length > 0) {
+            setSummaryData(compute.holdings(data, USD, marketRates, currencies))
+        }
     }, [data, marketRates, currencies])
 
 

@@ -9,6 +9,9 @@ export interface Provider {
     fetchMarketRates(outCurrency: string, supportedCurrencies: Array<Currency>, callback: (err: (Error | null), mr: (MarketRates | null)) => void): void;
 
     getLatestMarketRates(): MarketRates
+
+    asyncFetchCurrencies(): Promise<Error | null>
+
 }
 
 export interface Currencies {
@@ -16,6 +19,48 @@ export interface Currencies {
 
     //Get by id, name, or symbol
     get(id: string | Currency): Currency | null
+}
+
+export function emptyCurrencies(): Currencies {
+    return {
+        get(id: string | Currency): Currency | null {
+            return null;
+        }, getAll(): Currency[] {
+            return [];
+        }
+    }
+}
+
+export class CurrenciesFromArray implements Currencies {
+    cs: Currency[]
+
+    constructor(cs: Currency[]) {
+        this.cs = cs;
+    }
+
+    get(id: string | Currency): Currency | null {
+        for (let entry of this.cs) {
+            if (typeof id === "string") {
+                if (entry.symbol.toLowerCase() === id.toLowerCase()) {
+                    return entry
+                }
+            } else {
+                if (
+                    id.symbol === (entry.symbol.toLowerCase()) ||
+                    id.symbol === (entry.symbol) ||
+                    id.id === (entry.id.toLowerCase()) ||
+                    id.id === (entry.id)) {
+                    return entry;
+                }
+            }
+        }
+        return null
+    }
+
+    getAll(): Currency[] {
+        return Array.from(this.cs.values())
+    }
+
 }
 
 export interface Currency {
@@ -26,7 +71,7 @@ export interface Currency {
     hasSymbol(symbol: string): boolean
 }
 
-export class SCurrency implements Currency {
+export class ValidCurrency implements Currency {
     id: string
     symbol: string
     name: string
@@ -81,6 +126,36 @@ class CoinGecko implements Provider {
         this.latestMarketRates = null
     }
 
+    async asyncFetchCurrencies(): Promise<Error | null> {
+        const listIds = 'https://api.coingecko.com/api/v3/coins/list'
+        if (this.symbolMap && this.symbolMap.size > 0) {
+            return null
+        }
+        const res = await superagent.get(listIds)
+            .set("Accept", "application/json")
+
+        if (res.error) {
+            return res.error
+        }
+
+
+        if (res.status === 200) {
+            //parse it
+
+            const symbolMap = new Map<string, Currency>()
+            for (var i = 0; i < res.body.length; ++i) {
+                const c = res.body[i]
+                symbolMap.set(res.body[i].symbol, new ValidCurrency(c.id, c.symbol, c.name))
+            }
+
+            this.symbolMap = symbolMap
+            return null
+        } else {
+            const err = new Error(`Unexpected status ${res.status} from ${listIds}, body: ${res.body}`)
+            return err
+        }
+    }
+
     fetchCurrencies(callback: (err: Error | null) => void): void {
         const listIds = 'https://api.coingecko.com/api/v3/coins/list'
 
@@ -101,7 +176,7 @@ class CoinGecko implements Provider {
                             const symbolMap = new Map<string, Currency>()
                             for (var i = 0; i < res.body.length; ++i) {
                                 const c = res.body[i]
-                                symbolMap.set(res.body[i].symbol, new SCurrency(c.id, c.symbol, c.name))
+                                symbolMap.set(res.body[i].symbol, new ValidCurrency(c.id, c.symbol, c.name))
                             }
 
                             this.symbolMap = symbolMap
@@ -121,7 +196,7 @@ class CoinGecko implements Provider {
         return {
             // @ts-ignore
             idMap: idMap,
-            
+
             get(symbol: string | Currency): Currency | null {
                 if (typeof symbol === "string") {
                     return idMap.get(symbol.toLowerCase()) || idMap.get(symbol) || null
