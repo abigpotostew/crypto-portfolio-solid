@@ -6,9 +6,9 @@ export default function computeMarketRate(tradesList: Trade[], destCurrency: Cur
     const totals = calcTotals(tradesList, currencies)
 
     let grandTotal = 0
-    totals.forEach((value, currencyName, map) => {
+    totals.forEach((value, currency, map) => {
         //get market rate
-        const rate = marketRates.get(currencyName, destCurrency)
+        const rate = marketRates.get(destCurrency, currency)
         grandTotal += value * rate
     })
 

@@ -115,7 +115,7 @@ interface UseMarketRatesProps extends UseCurrenciesProps {
     initialCurrencies: Currency[]
 }
 
-
+//todo return a dispatch for ticker
 export function useMarketRates({provider}: UseCurrenciesProps) {
     const webId = useSelector((state: AppState) => state.webId)
 
@@ -162,7 +162,7 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
 
     const loading = (tradesLoading && currenciesLoading)
     const error = tradesError || currenciesError
-    return {marketRates, trades, loading, error};
+    return {marketRates, trades, loading, error, currencies};
 }
 
 

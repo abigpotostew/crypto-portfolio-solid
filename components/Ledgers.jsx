@@ -24,17 +24,6 @@ export default function Ledgers() {
     const [isTickerActive, setIsTickerActive] = React.useState(false);
     const [provider] = React.useState(coinGeckoProvider())
 
-
-    // const {
-    //     data: currencies,
-    //     loading: currenciesLoading,
-    //     error: currenciesError
-    // } = useCurrencies({provider: provider})
-
-    // const [supportedCurrencies, setSupportedCurrencies] = React.useState(alwaysIncludeCoins)
-    // const [marketRates, setMarketRates] = React.useState(provider.getLatestMarketRates())
-
-
     const {
         marketRates,
         trades,
@@ -42,52 +31,21 @@ export default function Ledgers() {
         error
     } = useMarketRates({provider: provider})
 
-    // //set supported currenceis from trades
+    // // start market rates ticker
     // React.useEffect(() => {
-    //     //if currencies are empty
-    //     setSupportedCurrencies(Array.from(uniqueCurrencies).concat(alwaysIncludeCoins))
     //
-    // }, [trades]) // <-- empty dependency array
-
-
-    // const getMarketRates = () => {
-    //     provider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
-    //         if (err) {
-    //             console.error(err)
-    //             console.error("stopping market rates ticker")
-    //             setIsTickerActive(false)
-    //         } else {
-    //             setMarketRates(rates)
-    //         }
-    //     })
-    // }
-
-    // start market rates ticker
-    React.useEffect(() => {
-
-        let interval = null;
-        if (isTickerActive) {
-            interval = setInterval(() => {
-                //get market rates
-                if (document.hasFocus()) getMarketRates()
-            }, 10000); ///todo make a call out in an effect
-        } else if (!isTickerActive) {
-            clearInterval(interval);
-        }
-        return () => clearInterval(interval);
-    }, [isTickerActive]);
-
-
-    // initial market rates query, one time only
-    // React.useEffect(() => {
-    //     //if currencies are empty
-    //
-    //     if (!currenciesLoading && currencies.getAll().length > 0) {
-    //         getMarketRates()
-    //         setIsTickerActive(true)
+    //     let interval = null;
+    //     if (isTickerActive) {
+    //         interval = setInterval(() => {
+    //             //get market rates
+    //             // if (document.hasFocus()) getMarketRates()
+    //             //todo support a ticker
+    //         }, 10000); ///todo make a call out in an effect
+    //     } else if (!isTickerActive) {
+    //         clearInterval(interval);
     //     }
-    //
-    // }, [supportedCurrencies]) // <-- empty dependency array
+    //     return () => clearInterval(interval);
+    // }, [isTickerActive]);
 
 
     return (

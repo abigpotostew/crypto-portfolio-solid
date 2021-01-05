@@ -14,9 +14,10 @@ interface CoinPortfolioProps {
     marketRates: MarketRates
     coinId: string
     currencies: Currencies
+    trades: Trade[]
 }
 
-export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPortfolioProps) {
+export default function CoinPortfolio({marketRates, trades, coinId, currencies}: CoinPortfolioProps) {
 
     const webId = useSelector((state: AppState) => state.webId)
     const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
@@ -25,19 +26,21 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
     const [compute] = React.useState(NewCompute())
     const [coin, setCoin] = React.useState<Currency>(new UncheckedCurrency(coinId))
 
+    const data = trades
     //TODO figure out where this data should come from in a reused way
-    const [data, setData] = React.useState(React.useMemo(() => {
-        //fetch data from doc
-        console.log("loaded data from memo")
-        // @ts-ignore
-        return getAllTradesDataFromDoc(podDocument)
-    }, [podDocument]))
+    // const [data, setData] = React.useState(trades)
+    // const [data, setData] = React.useState(React.useMemo(() => {
+    //     //fetch data from doc
+    //     console.log("loaded data from memo")
+    //     // @ts-ignore
+    //     return trades
+    // }, [trades]))
 
-    React.useEffect(() => {
-        console.log("setting data from doc trades...")
-        podDocument && setData(getAllTradesDataFromDoc(podDocument))
-        console.log("done setting data from doc trades")
-    }, [podDocument])
+    // React.useEffect(() => {
+    //     console.log("setting data from doc trades...")
+    //     podDocument && setData(getAllTradesDataFromDoc(podDocument))
+    //     console.log("done setting data from doc trades")
+    // }, [podDocument])
 
 
     //handler passed to table, saves to pod and dispatches new pod doc and ledger thing
@@ -148,7 +151,7 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
     )
 
     React.useEffect(() => {
-        if (currencies.getAll().length > 0) {
+        if (currencies.getAll().length > 0 && !marketRates.pending()) {
             setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
         }
     }, [marketRates, data, currencies])
