@@ -3,14 +3,13 @@ import {appReducer} from '../reducers/appReducer';
 import {getWebId} from "../src/authentication";
 import {PodDocument, Trade} from "../src/store";
 
-// import { getWebId } from '../functions/authentication';
 
-interface LedgerState {
+export interface LedgerState {
     podDocument: PodDocument | null
     trades: Trade[]
 }
 
-interface AppState {
+export interface AppState {
     ledgersState: LedgerState
     webId: string | null
 }
@@ -20,11 +19,11 @@ const initialState: AppState = {
     webId: null,
 };
 
-const AppContext = createContext(initialState);
+const AppContext = React.createContext(initialState);
 const {Provider} = AppContext;
 
 // @ts-ignore
-export function AppProvider({children}) {
+export function AppProvider({children, store}) {
     const [state, dispatch] = useReducer(appReducer, initialState);
 
     useEffect(() => {
@@ -41,9 +40,7 @@ export function AppProvider({children}) {
     }, []);
 
     // @ts-ignore
-    return <Provider value={{state, dispatch}}>{children}</Provider>;
+    return ({children});
 }
-
-export const AppConsumer = AppContext.Consumer;
 
 export default AppContext;
