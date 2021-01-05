@@ -165,7 +165,10 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
     return newData
 }
 
-export function getAllTradesDataFromDoc(podDocument: PodDocument): Trade[] {
+export function getAllTradesDataFromDoc(podDocument: PodDocument | null): Trade[] {
+    if (!podDocument) {
+        return []
+    }
     try {
         const tradeSubjects = podDocument.doc.getAllSubjectsOfType(LedgerType.Trade)
         const tradesData = tradeSubjects.map((t) => hydrateTradeData(podDocument.doc, t))
@@ -176,11 +179,15 @@ export function getAllTradesDataFromDoc(podDocument: PodDocument): Trade[] {
     }
 }
 
-export async function saveTradesToLedger(podDocument: PodDocument, tradesData: Trade[], deletes: Trade[]) {
+export async function saveTradesToLedger(podDocument: PodDocument | null, tradesData: Trade[], deletes: Trade[]) {
     //map each one to an existing subject, but update the data in each.
     // for new ones (missing url) add it to the ledger thing and document (create traderowtdoc)
     //it would be a good question for solid forum to isolate this scenario for replication.
 
+    if (!podDocument) {
+        throw new Error("cannot save trades to empty pod doc: " + tradesData)
+        return
+    }
 
     const doc = podDocument.doc
 

@@ -7,6 +7,8 @@ import AppContext from "../contexts/AppContext";
 import {coinGeckoProvider} from "../src/marketdata/provider";
 import {alwaysIncludeCoins} from "../src/currencies";
 import {useCurrencies, useMarketRates, useTrades} from "../src/marketdata/effect";
+import {AppState} from "../src/redux/store";
+import {useSelector, useDispatch} from 'react-redux'
 
 export function getPodFromWebId(webId, path = 'public') {
     const a = document.createElement('a');
@@ -17,9 +19,7 @@ export function getPodFromWebId(webId, path = 'public') {
 
 export default function Ledgers() {
 
-    const {state, dispatch} = React.useContext(AppContext);
-    const {webId, ledgersState} = state;
-    const {podDocument} = ledgersState && ledgersState || {};
+    const podDocument = useSelector((state) => state.ledgersState.podDocument)
 
     const [isTickerActive, setIsTickerActive] = React.useState(false);
     const [provider] = React.useState(coinGeckoProvider())

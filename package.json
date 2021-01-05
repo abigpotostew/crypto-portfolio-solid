@@ -28,6 +28,7 @@
     "react-scripts": "^4.0.0",
     "react-table": "^7.6.1",
     "redux": "^4.0.5",
+    "redux-devtools-extension": "^2.13.8",
     "solid-auth-client": "^2.5.3",
     "superagent": "^6.1.0",
     "tripledoc": "^4.4.0",

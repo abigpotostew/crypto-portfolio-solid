@@ -4,10 +4,11 @@ import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
 import computeMarketRate, {NewCompute} from "../src/compute";
 import {USD} from "../src/currencies";
 import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
-import AppContext from "../contexts/AppContext";
 import {getPodFromWebId} from "./Ledgers";
 import {Currencies, Currency, MarketRates, UncheckedCurrency} from "../src/marketdata/provider";
 import TimeStamp from "./date/TimeStamp";
+import {AppState} from "../src/redux/store";
+import {useSelector, useDispatch} from 'react-redux'
 
 interface CoinPortfolioProps {
     marketRates: MarketRates
@@ -17,10 +18,9 @@ interface CoinPortfolioProps {
 
 export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPortfolioProps) {
 
-    // @ts-ignore
-    const {state, dispatch} = React.useContext(AppContext);
-    const {webId, ledgersState} = state;
-    const {podDocument} = ledgersState && ledgersState || {};
+    const webId = useSelector((state: AppState) => state.webId)
+    const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
+    const dispatch = useDispatch()
 
     const [compute] = React.useState(NewCompute())
     const [coin, setCoin] = React.useState<Currency>(new UncheckedCurrency(coinId))
@@ -29,12 +29,13 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
         console.log("loaded data from memo")
+        // @ts-ignore
         return getAllTradesDataFromDoc(podDocument)
-    }, []))
+    }, [podDocument]))
 
     React.useEffect(() => {
         console.log("setting data from doc trades...")
-        setData(getAllTradesDataFromDoc(podDocument))
+        podDocument && setData(getAllTradesDataFromDoc(podDocument))
         console.log("done setting data from doc trades")
     }, [podDocument])
 
@@ -49,6 +50,7 @@ export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPor
 
         console.log("setDataHandler saving...", newData)
         // store save ledger trades,
+        // @ts-ignore
         await saveTradesToLedger(podDocument, newData, deletes)
         // t.url = tradeRef
         // const newdata = data.concat(t)

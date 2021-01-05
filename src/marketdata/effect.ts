@@ -3,7 +3,8 @@ import React from "react";
 import {getAllTradesDataFromDoc, getLedgerDoc, Trade} from "../store";
 import {alwaysIncludeCoins} from "../currencies";
 import {getPodFromWebId} from "../../components/Ledgers";
-import AppContext from "../../contexts/AppContext";
+import {AppState} from "../redux/store";
+import {useSelector, useDispatch} from 'react-redux'
 
 interface UseCurrenciesProps {
     // initialCurrencies: Currency[]
@@ -72,9 +73,7 @@ async function fetchledger(webId: string) {
 
 export function useTrades({webId}: UseTradesProps) {
 
-    // @ts-ignore
-    const {state, dispatch} = React.useContext(AppContext);
-    // const {webId, ledgersState} = state;
+    const dispatch = useDispatch()
 
     const [trades, setTrades] = React.useState<Trade[]>([]);
     const [loading, setLoading] = React.useState<boolean>(false);
@@ -118,10 +117,7 @@ interface UseMarketRatesProps extends UseCurrenciesProps {
 
 
 export function useMarketRates({provider}: UseCurrenciesProps) {
-    // @ts-ignore
-    const {state, dispatch} = React.useContext(AppContext);
-    const {webId, ledgersState} = state;
-    const {podDocument} = ledgersState && ledgersState || {};
+    const webId = useSelector((state: AppState) => state.webId)
 
     const {
         data: currencies,
@@ -157,12 +153,12 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
     // initial market rates query, one time only
     React.useEffect(() => {
         //if currencies are empty
-
+        // todo PERF this is running a lot of times
         if (!currenciesLoading && currencies.getAll().length > 0) {
             getMarketRates()
         }
 
-    }, [currencies, trades]); // <-- empty dependency array
+    }, [currenciesLoading, currencies, trades]); // <-- empty dependency array
 
     const loading = (tradesLoading && currenciesLoading)
     const error = tradesError || currenciesError

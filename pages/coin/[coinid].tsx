@@ -1,5 +1,4 @@
 import {useRouter} from 'next/router'
-import AppContext from "../../contexts/AppContext";
 import React from "react"
 import {coinGeckoProvider, Currency} from "../../src/marketdata/provider";
 import {alwaysIncludeCoins} from "../../src/currencies";
@@ -8,9 +7,11 @@ import {getPodFromWebId} from "../../components/Ledgers";
 import styles from "../../styles/Home.module.css"
 // @ts-ignore
 import {AuthButton} from "@solid/react"
-import {useWebId} from "../../src/solid";
 import CoinPortfolio from "../../components/CoinPortfolio";
 import Link from 'next/link'
+import {AppState} from "../../src/redux/store";
+import {useSelector, useDispatch} from 'react-redux'
+import {useWebId} from "../../src/authentication";
 
 const CoinLayout = () => {
 
@@ -20,12 +21,15 @@ const CoinLayout = () => {
     const coinName = (typeof coinid === "string" && coinid || undefined)
 
     //TODO this is all duplicate, figure out where to put this stuff, probably in it's own effect wrapper
-    const myWebId = useWebId()
+    // const myWebId = useWebId()
+    //
+    // // @ts-ignore
+    // const {state, dispatch} = React.useContext(AppContext);
+    // const {webId, ledgersState} = state;
+    // // const {podDocument} = webId && ledgersState && ledgersState || {};
 
-    // @ts-ignore
-    const {state, dispatch} = React.useContext(AppContext);
-    const {webId, ledgersState} = state;
-    const {podDocument} = webId && ledgersState && ledgersState || {};
+    const webId = useWebId()
+    const dispatch = useDispatch()
 
     const [isTickerActive, setIsTickerActive] = React.useState(false);
     const [currencyProvider] = React.useState(coinGeckoProvider())
@@ -115,11 +119,11 @@ const CoinLayout = () => {
     return (
         <div className={styles.container}>
             <Link href={"/"}>Home</Link>
-            <p>{myWebId}</p>
+            <p>{webId}</p>
             <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
 
             <p>Coin ID: {coinid}</p>
-            {myWebId && coinid &&
+            {webId && coinid &&
             <CoinPortfolio coinId={coinName || ""} marketRates={marketRates} currencies={currencies}></CoinPortfolio>}
         </div>
     )

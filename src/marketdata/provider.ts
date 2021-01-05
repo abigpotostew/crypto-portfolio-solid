@@ -240,8 +240,9 @@ class CoinGecko implements Provider {
                             const forUsd = new Map<string, number>()
                             for (var i = 0; i < res.body.length; ++i) {
                                 const market = res.body[i]
-                                const avg = (market.high_24h + market.low_24h) / 2
-                                forUsd.set(market.symbol.toLowerCase(), avg)
+                                // const avg = (market.high_24h + market.low_24h) / 2
+                                const high = market.high_24h
+                                forUsd.set(market.symbol.toLowerCase(), high)
                             }
                             const rates = {
                                 get: (outC: string | Currency, inC: string | Currency) => {

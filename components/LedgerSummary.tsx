@@ -1,5 +1,4 @@
 import {Currencies, MarketRates} from "../src/marketdata/provider";
-import AppContext from "../contexts/AppContext";
 import {getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade} from "../src/store";
 import React from "react"
 import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
@@ -7,6 +6,9 @@ import computeMarketRate, {MarketHolding, NewCompute} from "../src/compute";
 import {USD} from "../src/currencies";
 import {getPodFromWebId} from "./Ledgers";
 import TickerSymbolLink from "./currency/TickerSymbolLink";
+import {useWebId} from "../src/authentication";
+import {useSelector, useDispatch} from 'react-redux'
+import {AppState} from "../src/redux/store";
 
 interface LedgerSummaryProps {
     marketRates: MarketRates
@@ -14,10 +16,9 @@ interface LedgerSummaryProps {
 }
 
 export default function LedgerSummary({marketRates, currencies}: LedgerSummaryProps) {
-    // @ts-ignore
-    const {state, dispatch} = React.useContext(AppContext);
-    const {webId, ledgersState} = state;
-    const {podDocument} = ledgersState && ledgersState || {};
+    const webId = useSelector((state: AppState) => state.webId)
+    const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
+    const dispatch = useDispatch()
 
     const [compute] = React.useState(NewCompute);
     const [summaryData, setSummaryData] = React.useState(new Array<MarketHolding>());
