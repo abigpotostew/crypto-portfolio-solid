@@ -71,6 +71,37 @@ async function fetchledger(webId: string) {
     return {trades: trades, uniqueCryptoCoins: uniqueCryptoCoins, podDocument: podDocument}
 }
 
+export function usePod({webId}: UseTradesProps) {
+
+    const dispatch = useDispatch()
+
+    React.useEffect(() => {
+        setError(null);
+        if (webId) {
+            (async () => {
+                try {
+                    setLoading(true);
+                    const res = await fetchledger(webId)
+                    setTrades(res.trades)
+                    setUniqueCurrencies(res.uniqueCryptoCoins)
+                    dispatch({
+                        type: 'set_ledgers_state',
+                        payload: {"podDocument": res.podDocument}
+                    });
+                } catch (err) {
+                    setError(err);
+                } finally {
+                    setLoading(false);
+                }
+            })()
+
+        } else {
+            setLoading(false)
+            setTrades([])
+        }
+    }, [webId])
+}
+
 export function useTrades({webId}: UseTradesProps) {
 
     const dispatch = useDispatch()
@@ -118,6 +149,7 @@ interface UseMarketRatesProps extends UseCurrenciesProps {
 //todo return a dispatch for ticker
 export function useMarketRates({provider}: UseCurrenciesProps) {
     const webId = useSelector((state: AppState) => state.webId)
+    // fetch pod doc if web id exists
 
     const {
         data: currencies,

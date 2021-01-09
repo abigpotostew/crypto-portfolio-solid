@@ -9,6 +9,7 @@ import {alwaysIncludeCoins} from "../src/currencies";
 import {useCurrencies, useMarketRates, useTrades} from "../src/marketdata/effect";
 import {AppState} from "../src/redux/store";
 import {useSelector, useDispatch} from 'react-redux'
+import Loading from "./loading/loading";
 
 export function getPodFromWebId(webId, path = 'public') {
     const a = document.createElement('a');
@@ -19,10 +20,11 @@ export function getPodFromWebId(webId, path = 'public') {
 
 export default function Ledgers() {
 
+    //todo this doesn't refresh upon login
     const podDocument = useSelector((state) => state.ledgersState.podDocument)
 
     const [isTickerActive, setIsTickerActive] = React.useState(false);
-    const [provider] = React.useState(coinGeckoProvider())
+    const [provider] = React.useState(React.useMemo(() => coinGeckoProvider()))
 
     const {
         marketRates,
@@ -51,6 +53,7 @@ export default function Ledgers() {
     return (
         <div>
             {/*todo tell this ledger which ledger subject to use*/}
+            {loading && <Loading/>}
             {podDocument && !loading &&
             <LedgerSummary marketRates={marketRates} currencies={provider.getCurrencies()}/>}
             <MarketRatesTicker rates={marketRates}/>

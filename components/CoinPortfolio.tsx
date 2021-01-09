@@ -155,8 +155,7 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
             setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
         }
     }, [marketRates, data, currencies])
-
-
+    
     // We need to keep the table from resetting the pageIndex when we
     // Update data. So we can keep track of that flag with a ref.
 

@@ -13,6 +13,7 @@ import {AppState} from "../../src/redux/store";
 import {useSelector, useDispatch} from 'react-redux'
 import {useWebId} from "../../src/authentication";
 import {useMarketRates} from "../../src/marketdata/effect";
+import Loading from "../../components/loading/loading";
 
 const CoinLayout = () => {
 
@@ -41,90 +42,16 @@ const CoinLayout = () => {
         error, currencies
     } = useMarketRates({provider: provider})
 
-    // const getMarketRates = () => {
-    //     currencyProvider.fetchMarketRates("USD", supportedCurrencies, (err, rates) => {
-    //         if (err) {
-    //             console.error(err)
-    //             console.error("stopping market rates ticker")
-    //             setIsTickerActive(false)
-    //         } else {
-    //             setMarketRates((old) => rates || old)
-    //             //coinbase requires merge
-    //         }
-    //     })
-    // }
-    //
-    // // start market rates ticker
-    // React.useEffect(() => {
-    //     let interval: number | undefined = undefined;
-    //     if (isTickerActive) {
-    //         // @ts-ignore //todo wtf
-    //         interval = setInterval(() => {
-    //             //get market rates
-    //             getMarketRates()
-    //         }, 10000);
-    //     } else if (!isTickerActive) {
-    //         clearInterval(interval);
-    //     }
-    //     return () => clearInterval(interval);
-    // }, [isTickerActive]);
-
-
-    // initial market rates query, one time only
-    // React.useEffect(() => {
-    //     //if currencies are empty
-    //     if (currencies.getAll().length === 0) {
-    //         currencyProvider.fetchCurrencies((err) => {
-    //             setCurrencies(currencyProvider.getCurrencies())
-    //             getMarketRates()
-    //             setIsTickerActive(true)
-    //             // fetch market rates
-    //         })
-    //     } else {
-    //         getMarketRates()
-    //     }
-    //     // then fetch market rates
-    //     // then start the timer using set ticker
-    //     // do stuff here...
-    //
-    // }, [supportedCurrencies]) // <-- empty dependency array
-
-    // React.useEffect(() => {
-    //     async function fetchLedgers() {
-    //         const ledgerContainerUri = getPodFromWebId(webId, "private")
-    //         const podDocument = await getLedgerDoc(ledgerContainerUri);
-    //
-    //         console.log("trades now", getAllTradesDataFromDoc(podDocument))
-    //
-    //         let trades = getAllTradesDataFromDoc(podDocument)
-    //         const uniqueCurrencies = new Set<Currency>();
-    //         trades.forEach((t) => {
-    //             uniqueCurrencies.add(t.amount.currency)
-    //         })
-    //         //todo remove all non-crypto currencies
-    //         let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t) => t.symbol !== "USD")
-    //         uniqueCryptoCoins.push(...alwaysIncludeCoins)
-    //
-    //         setSupportedCurrencies(uniqueCryptoCoins)
-    //
-    //         dispatch({
-    //             type: 'set_ledgers_state',
-    //             payload: {"podDocument": podDocument}
-    //         });
-    //     }
-    //
-    //     if (webId !== null) {
-    //         fetchLedgers();
-    //     }
-    // }, [webId]);
-
     //todo show trades filted to this coin, and if valid coin only
+
     return (
         <div className={styles.container}>
             <Link href={"/"}>Home</Link>
             <p>{webId}</p>
-            <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
 
+            <p><Loading/></p>
+            <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
+            {!webId || !coinid || loading && <Loading/>}
             <p>Coin ID: {coinid}</p>
             {webId && coinid &&
             <CoinPortfolio coinId={coinName || ""} trades={trades} marketRates={marketRates}

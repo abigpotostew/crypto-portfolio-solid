@@ -67,6 +67,7 @@ export default function AddTradeDialog(props: AddTradeDialogProps) {
 
     // @ts-ignore
     const handleAdd = event => {
+        // todo check the currency against 'currencies' before saving it to pod.
         const newT = newTrade(new UncheckedCurrency(trade.inCurrency), trade.inAmount, trade.costAmount, trade.fee, "", new Date(), new Date(), "", "", TradeType.BUY)
         addTradeHandler(newT)
         setTrade(initialData)
@@ -83,12 +84,19 @@ export default function AddTradeDialog(props: AddTradeDialogProps) {
     // @ts-ignore
     const handleChange = (name: string, isNumeric: boolean) => ({target: {value}}) => {
         //need to convert some to numbers
-        let v = 0
         if (isNumeric) {
-            v = doParseValue(value)
+            let v = 0
+            if (isNumeric) {
+                v = doParseValue(value)
+            }
+            setTrade({...trade, [name]: v})
+            console.log("yo", name, "is now", v)
+        } else {
+            setTrade({...trade, [name]: value})
+            console.log("yo", name, "is now", value)
         }
-        console.log("yo", name, "is now", v)
-        setTrade({...trade, [name]: v})
+
+
     }
 
     // @ts-ignore
