@@ -1,25 +1,25 @@
-import {useRouter} from 'next/router'
+import { useRouter } from 'next/router'
 import React from "react"
-import {coinGeckoProvider, Currency} from "../../src/marketdata/provider";
-import {alwaysIncludeCoins} from "../../src/currencies";
-import {getAllTradesDataFromDoc, getLedgerDoc} from "../../src/store";
-import {getPodFromWebId} from "../../components/Ledgers";
+import { coinGeckoProvider, Currency } from "../../src/marketdata/provider";
+import { alwaysIncludeCoins } from "../../src/currencies";
+import { getAllTradesDataFromDoc, getLedgerDoc } from "../../src/store";
+import { getPodFromWebId } from "../../components/Ledgers";
 import styles from "../../styles/Home.module.css"
 // @ts-ignore
-import {AuthButton} from "@solid/react"
+import { AuthButton } from "@solid/react"
 import CoinPortfolio from "../../components/CoinPortfolio";
 import Link from 'next/link'
-import {AppState} from "../../src/redux/store";
-import {useSelector, useDispatch} from 'react-redux'
-import {useWebId} from "../../src/authentication";
-import {useMarketRates} from "../../src/marketdata/effect";
+import { AppState } from "../../src/redux/store";
+import { useSelector, useDispatch } from 'react-redux'
+import { useWebId } from "../../src/authentication";
+import { useMarketRates } from "../../src/marketdata/effect";
 import Loading from "../../components/loading/loading";
 
 const CoinLayout = () => {
 
 
     const router = useRouter()
-    const {coinid} = router.query
+    const { coinid } = router.query
     const coinName = (typeof coinid === "string" && coinid || undefined)
 
     //TODO this is all duplicate, figure out where to put this stuff, probably in it's own effect wrapper
@@ -40,7 +40,7 @@ const CoinLayout = () => {
         trades,
         loading,
         error, currencies
-    } = useMarketRates({provider: provider})
+    } = useMarketRates({ provider: provider })
 
     //todo show trades filted to this coin, and if valid coin only
 
@@ -49,13 +49,12 @@ const CoinLayout = () => {
             <Link href={"/"}>Home</Link>
             <p>{webId}</p>
 
-            <p><Loading/></p>
-            <AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>
-            {!webId || !coinid || loading && <Loading/>}
+            <AuthButton popup="/popup.html" login="Login here!" logout="Log me out" />
+            {!webId || !coinid || loading && <Loading />}
             <p>Coin ID: {coinid}</p>
             {webId && coinid &&
-            <CoinPortfolio coinId={coinName || ""} trades={trades} marketRates={marketRates}
-                           currencies={currencies}></CoinPortfolio>}
+                <CoinPortfolio coinId={coinName || ""} trades={trades} marketRates={marketRates}
+                    currencies={currencies}></CoinPortfolio>}
         </div>
     )
 }

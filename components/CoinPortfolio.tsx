@@ -1,14 +1,14 @@
 import React from "react"
 
-import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
-import computeMarketRate, {NewCompute} from "../src/compute";
-import {USD} from "../src/currencies";
-import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
-import {getPodFromWebId} from "./Ledgers";
-import {Currencies, Currency, MarketRates, UncheckedCurrency} from "../src/marketdata/provider";
+import EnhancedTable, { EditableNumericCell } from "./EnhancedTable";
+import computeMarketRate, { NewCompute } from "../src/compute";
+import { USD } from "../src/currencies";
+import { getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade } from "../src/store";
+import { getPodFromWebId } from "./Ledgers";
+import { Currencies, Currency, MarketRates, UncheckedCurrency } from "../src/marketdata/provider";
 import TimeStamp from "./date/TimeStamp";
-import {AppState} from "../src/redux/store";
-import {useSelector, useDispatch} from 'react-redux'
+import { AppState } from "../src/redux/store";
+import { useSelector, useDispatch } from 'react-redux'
 
 interface CoinPortfolioProps {
     marketRates: MarketRates
@@ -18,7 +18,7 @@ interface CoinPortfolioProps {
 }
 
 // a portfolio grid for a specific coin
-export default function CoinPortfolio({marketRates, trades, coinId, currencies}: CoinPortfolioProps) {
+export default function CoinPortfolio({ marketRates, trades, coinId, currencies }: CoinPortfolioProps) {
 
     const webId = useSelector((state: AppState) => state.webId)
     const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
@@ -28,6 +28,11 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
     const [coin, setCoin] = React.useState<Currency>(new UncheckedCurrency(coinId))
 
     const data = trades
+    const visibleTrades = trades.filter((t) => t.amount.currency.hasSymbol(coin.symbol))
+
+    //filter trades to just this coin
+
+
     //TODO figure out where this data should come from in a reused way
     // const [data, setData] = React.useState(trades)
     // const [data, setData] = React.useState(React.useMemo(() => {
@@ -66,7 +71,7 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
         // dispatch the thing
         dispatch({
             type: 'set_ledgers_state',
-            payload: {"podDocument": fetchedPodDocument}
+            payload: { "podDocument": fetchedPodDocument }
         });
         console.log("setDataHandler dispatched")
     }
@@ -111,7 +116,7 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
                 accessor: 'dateCreated',// @ts-ignore
                 // @ts-ignore
                 Cell: (table, cell) => {
-                    return (<TimeStamp date={table.value}/>)
+                    return (<TimeStamp date={table.value} />)
                 }
             },
             {
@@ -156,7 +161,7 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
             setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
         }
     }, [marketRates, data, currencies])
-    
+
     // We need to keep the table from resetting the pageIndex when we
     // Update data. So we can keep track of that flag with a ref.
 
@@ -190,7 +195,7 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
         <p>{coin.name} Holdings Market Value: {totalValue}</p>
         <EnhancedTable
             columns={columns}
-            data={data}
+            data={visibleTrades}
             // setData={setDataHandler} // add, remove delete table action
             addData={addDataHandler} // add, remove delete table action
             deleteData={deleteDataHandler} // add, remove delete table action
