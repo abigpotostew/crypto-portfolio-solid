@@ -17,6 +17,7 @@ interface CoinPortfolioProps {
     trades: Trade[]
 }
 
+// a portfolio grid for a specific coin
 export default function CoinPortfolio({marketRates, trades, coinId, currencies}: CoinPortfolioProps) {
 
     const webId = useSelector((state: AppState) => state.webId)
