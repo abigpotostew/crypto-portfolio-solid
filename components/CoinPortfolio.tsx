@@ -15,6 +15,7 @@ interface CoinPortfolioProps {
     currencies: Currencies
 }
 
+// a portfolio grid for a specific coin
 export default function CoinPortfolio({marketRates, coinId, currencies}: CoinPortfolioProps) {
 
     // @ts-ignore
