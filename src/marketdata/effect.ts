@@ -1,10 +1,10 @@
-import {Currencies, CurrenciesFromArray, Currency, emptyCurrencies, Provider} from "./provider";
+import { Currencies, CurrenciesFromArray, Currency, emptyCurrencies, Provider } from "./provider";
 import React from "react";
-import {getAllTradesDataFromDoc, getLedgerDoc, Trade} from "../store";
-import {alwaysIncludeCoins} from "../currencies";
-import {getPodFromWebId} from "../../components/Ledgers";
-import {AppState} from "../redux/store";
-import {useSelector, useDispatch} from 'react-redux'
+import { getAllTradesDataFromDoc, getLedgerDoc, Trade } from "../store";
+import { alwaysIncludeCoins } from "../currencies";
+import { getPodFromWebId } from "../../components/Ledgers";
+import { AppState } from "../redux/store";
+import { useSelector, useDispatch } from 'react-redux'
 
 interface UseCurrenciesProps {
     // initialCurrencies: Currency[]
@@ -15,7 +15,7 @@ function fetch(provider: Provider): Promise<Error | null> {
     return provider.asyncFetchCurrencies()
 }
 
-export function useCurrencies({provider}: UseCurrenciesProps) {
+export function useCurrencies({ provider }: UseCurrenciesProps) {
     const [data, setData] = React.useState<Currencies>(provider.getCurrencies());
     const [loading, setLoading] = React.useState<boolean>(false);
     const [error, setError] = React.useState<Error | null>();
@@ -44,7 +44,7 @@ export function useCurrencies({provider}: UseCurrenciesProps) {
         }
     }, [provider]);
 
-    return {data, loading, error};
+    return { data, loading, error };
 }
 
 interface UseTradesProps {
@@ -68,10 +68,10 @@ async function fetchledger(webId: string) {
     let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t) => t.id !== "USD")
     uniqueCryptoCoins.push(...alwaysIncludeCoins)
 
-    return {trades: trades, uniqueCryptoCoins: uniqueCryptoCoins, podDocument: podDocument}
+    return { trades: trades, uniqueCryptoCoins: uniqueCryptoCoins, podDocument: podDocument }
 }
 
-export function usePod({webId}: UseTradesProps) {
+/*export function usePod({webId}: UseTradesProps) {
 
     const dispatch = useDispatch()
 
@@ -100,9 +100,9 @@ export function usePod({webId}: UseTradesProps) {
             setTrades([])
         }
     }, [webId])
-}
+}*/
 
-export function useTrades({webId}: UseTradesProps) {
+export function useTrades({ webId }: UseTradesProps) {
 
     const dispatch = useDispatch()
 
@@ -123,7 +123,7 @@ export function useTrades({webId}: UseTradesProps) {
                     setUniqueCurrencies(res.uniqueCryptoCoins)
                     dispatch({
                         type: 'set_ledgers_state',
-                        payload: {"podDocument": res.podDocument}
+                        payload: { "podDocument": res.podDocument }
                     });
                 } catch (err) {
                     setError(err);
@@ -138,7 +138,7 @@ export function useTrades({webId}: UseTradesProps) {
         }
     }, [webId])
 
-    return {trades, uniqueCurrencies, loading, error};
+    return { trades, uniqueCurrencies, loading, error };
 }
 
 
@@ -147,7 +147,7 @@ interface UseMarketRatesProps extends UseCurrenciesProps {
 }
 
 //todo return a dispatch for ticker
-export function useMarketRates({provider}: UseCurrenciesProps) {
+export function useMarketRates({ provider }: UseCurrenciesProps) {
     const webId = useSelector((state: AppState) => state.webId)
     // fetch pod doc if web id exists
 
@@ -155,7 +155,7 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
         data: currencies,
         loading: currenciesLoading,
         error: currenciesError
-    } = useCurrencies({provider: provider})
+    } = useCurrencies({ provider: provider })
 
     const [marketRates, setMarketRates] = React.useState(provider.getLatestMarketRates())
 
@@ -164,7 +164,7 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
         uniqueCurrencies: uniqueCurrencies,
         loading: tradesLoading,
         error: tradesError
-    } = useTrades({webId: webId})
+    } = useTrades({ webId: webId })
 
     const getMarketRates = () => {
         // todo filter out fiat somehow?
@@ -194,7 +194,7 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
 
     const loading = (tradesLoading && currenciesLoading)
     const error = tradesError || currenciesError
-    return {marketRates, trades, loading, error, currencies};
+    return { marketRates, trades, loading, error, currencies };
 }
 
 

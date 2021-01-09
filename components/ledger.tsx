@@ -1,34 +1,36 @@
 import React from "react"
 
-import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
+import EnhancedTable, { EditableNumericCell } from "./EnhancedTable";
 import computeMarketRate from "../src/compute";
-import {USD} from "../src/currencies";
-import {getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade} from "../src/store";
-import AppContext from "../contexts/AppContext";
-import {getPodFromWebId} from "./Ledgers";
-import {Currencies, MarketRates} from "../src/marketdata/provider";
+import { USD } from "../src/currencies";
+import { getAllTradesDataFromDoc, getLedgerDoc, newTrade, saveTradesToLedger, Trade } from "../src/store";
+import { getPodFromWebId } from "./Ledgers";
+import { Currencies, MarketRates } from "../src/marketdata/provider";
+import { useSelector, useDispatch } from 'react-redux'
+import { AppState } from "../src/redux/store";
 
 interface LedgerProps {
     marketRates: MarketRates
     currencies: Currencies
+    trades: Trade[]
 }
 
-export default function Ledger({marketRates, currencies}: LedgerProps) {
+export default function Ledger({ marketRates, currencies, trades }: LedgerProps) {
 
-    // @ts-ignore
-    const {state, dispatch} = React.useContext(AppContext);
-    const {webId, ledgersState} = state;
-    const {podDocument} = ledgersState && ledgersState || {};
+    const webId = useSelector((state: AppState) => state.webId)
+    const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
+    const dispatch = useDispatch()
+
 
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
         console.log("loaded data from memo")
-        return getAllTradesDataFromDoc(podDocument)
+        return trades//getAllTradesDataFromDoc(podDocument)
     }, []))
 
     React.useEffect(() => {
         console.log("setting data from doc trades...")
-        setData(getAllTradesDataFromDoc(podDocument))
+        setData(trades)//getAllTradesDataFromDoc(podDocument))
         console.log("done setting data from doc trades")
     }, [podDocument])
 
@@ -54,7 +56,7 @@ export default function Ledger({marketRates, currencies}: LedgerProps) {
         // dispatch the thing
         dispatch({
             type: 'set_ledgers_state',
-            payload: {"podDocument": fetchedPodDocument}
+            payload: { "podDocument": fetchedPodDocument }
         });
         console.log("setDataHandler dispatched")
     }
@@ -195,6 +197,7 @@ export default function Ledger({marketRates, currencies}: LedgerProps) {
         <EnhancedTable
             columns={columns}
             data={data}
+            //@ts-ignore
             setData={setDataHandler} // add, remove delete table action
             updateMyData={updateMyData} // table edit inline action
             skipPageReset={skipPageReset}

@@ -3,7 +3,7 @@ import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
 import LedgerSummary from "./LedgerSummary";
 import React from "react"
-import AppContext from "../contexts/AppContext";
+
 import { coinGeckoProvider } from "../src/marketdata/provider";
 import { alwaysIncludeCoins } from "../src/currencies";
 import { useCurrencies, useMarketRates, useTrades } from "../src/marketdata/effect";
