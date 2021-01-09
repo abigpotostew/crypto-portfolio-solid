@@ -1,21 +1,22 @@
-import {Currencies, MarketRates} from "../src/marketdata/provider";
-import {getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade} from "../src/store";
+import { Currencies, MarketRates } from "../src/marketdata/provider";
+import { getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade } from "../src/store";
 import React from "react"
-import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
-import computeMarketRate, {MarketHolding, NewCompute} from "../src/compute";
-import {USD} from "../src/currencies";
-import {getPodFromWebId} from "./Ledgers";
+import EnhancedTable, { EditableNumericCell } from "./EnhancedTable";
+import computeMarketRate, { MarketHolding, NewCompute } from "../src/compute";
+import { USD } from "../src/currencies";
+import { getPodFromWebId } from "./Ledgers";
 import TickerSymbolLink from "./currency/TickerSymbolLink";
-import {useWebId} from "../src/authentication";
-import {useSelector, useDispatch} from 'react-redux'
-import {AppState} from "../src/redux/store";
+import { useWebId } from "../src/authentication";
+import { useSelector, useDispatch } from 'react-redux'
+import { AppState } from "../src/redux/store";
 
 interface LedgerSummaryProps {
     marketRates: MarketRates
     currencies: Currencies
+    trades: Trade[]
 }
 
-export default function LedgerSummary({marketRates, currencies}: LedgerSummaryProps) {
+export default function LedgerSummary({ marketRates, currencies, trades }: LedgerSummaryProps) {
     const webId = useSelector((state: AppState) => state.webId)
     const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
     const dispatch = useDispatch()
@@ -26,14 +27,15 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
     const [data, setData] = React.useState(React.useMemo(() => {
         //fetch data from doc
         console.log("loaded data from memo")
-        return getAllTradesDataFromDoc(podDocument)
-    }, []))
+        return trades //getAllTradesDataFromDoc(podDocument)
+    }, [trades]))
 
-    React.useEffect(() => {
-        console.log("setting data from doc trades...")
-        setData(getAllTradesDataFromDoc(podDocument))
-        console.log("done setting data from doc trades")
-    }, [podDocument])
+    // React.useEffect(() => {
+    //     console.log("setting data from doc trades...")
+    //     setData(getAllTradesDataFromDoc(podDocument))
+    //     console.log("done setting data from doc trades")
+    // }, [podDocument])
+
 
     React.useEffect(() => {
         if (currencies.getAll().length > 0) {
@@ -52,7 +54,7 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
                 // @ts-ignore
                 Cell: (table, cell) => {
                     //should have precision of the currency
-                    return (<TickerSymbolLink currency={table.value}/>)
+                    return (<TickerSymbolLink currency={table.value} />)
                 },
             },
             {
@@ -104,7 +106,7 @@ export default function LedgerSummary({marketRates, currencies}: LedgerSummaryPr
         // dispatch the thing
         dispatch({
             type: 'set_ledgers_state',
-            payload: {"podDocument": fetchedPodDocument}
+            payload: { "podDocument": fetchedPodDocument }
         });
         console.log("setDataHandler dispatched")
     }

@@ -1,15 +1,16 @@
-import {getAllTradesDataFromDoc, getLedgerDoc,} from "../src/store";
+import { getAllTradesDataFromDoc, getLedgerDoc, } from "../src/store";
 import MarketRatesTicker from "./marketRates";
 import Ledger from "./ledger";
 import LedgerSummary from "./LedgerSummary";
 import React from "react"
 import AppContext from "../contexts/AppContext";
-import {coinGeckoProvider} from "../src/marketdata/provider";
-import {alwaysIncludeCoins} from "../src/currencies";
-import {useCurrencies, useMarketRates, useTrades} from "../src/marketdata/effect";
-import {AppState} from "../src/redux/store";
-import {useSelector, useDispatch} from 'react-redux'
+import { coinGeckoProvider } from "../src/marketdata/provider";
+import { alwaysIncludeCoins } from "../src/currencies";
+import { useCurrencies, useMarketRates, useTrades } from "../src/marketdata/effect";
+import { AppState } from "../src/redux/store";
+import { useSelector, useDispatch } from 'react-redux'
 import Loading from "./loading/loading";
+import { useWebId } from "../src/authentication";
 
 export function getPodFromWebId(webId, path = 'public') {
     const a = document.createElement('a');
@@ -26,12 +27,20 @@ export default function Ledgers() {
     const [isTickerActive, setIsTickerActive] = React.useState(false);
     const [provider] = React.useState(React.useMemo(() => coinGeckoProvider()))
 
+
+
+    const webId = useWebId()
+    const dispatch = useDispatch()
+
+
+
+
     const {
         marketRates,
         trades,
         loading,
-        error
-    } = useMarketRates({provider: provider})
+        error, currencies
+    } = useMarketRates({ provider: provider })
 
     // // start market rates ticker
     // React.useEffect(() => {
@@ -53,10 +62,10 @@ export default function Ledgers() {
     return (
         <div>
             {/*todo tell this ledger which ledger subject to use*/}
-            {loading && <Loading/>}
+            {loading && <Loading />}
             {podDocument && !loading &&
-            <LedgerSummary marketRates={marketRates} currencies={provider.getCurrencies()}/>}
-            <MarketRatesTicker rates={marketRates}/>
+                <LedgerSummary marketRates={marketRates} currencies={provider.getCurrencies()} trades={trades} />}
+            <MarketRatesTicker rates={marketRates} />
 
 
             {/*only one ledger at this time, but someday could have multiple in the same document*/}
