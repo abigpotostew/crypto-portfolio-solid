@@ -3411,10 +3411,6 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@types/@metamask/detect-provider":
-  version "1.2.0"
-  resolved "https://codeload.github.com/metamask/detect-provider/tar.gz/d1f86405ebf53fb273a1a1228c134e2a3989e892"
-
 "@types/anymatch@*":
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/@types/anymatch/-/anymatch-1.3.1.tgz#336badc1beecb9dacc38bea2cf32adf627a8421a"

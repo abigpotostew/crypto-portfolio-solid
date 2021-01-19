@@ -41,11 +41,11 @@ export default function ImportButton({handleSyncTrades}: ImportTradesProps) {
                 ethAccount,
                 'latest' // state at the latest block
             ]
-        }).then((hexInt) => {
+        }).then((hexInt: string) => {
             console.log("num txns:", parseInt(hexInt, 16))
         })
 
-        const covalent = new CovalentService(process.env.NEXT_PUBLIC_COVALENT_HOST, process.env.NEXT_PUBLIC_COVALENT_API_KEY)
+        const covalent = new CovalentService(undefined, undefined)
         const balances = await covalent.getTokenAddressBalances(1, ethAccount)
 
         const combined: Trade[] = [];

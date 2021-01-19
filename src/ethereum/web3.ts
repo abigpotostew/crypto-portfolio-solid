@@ -23,7 +23,7 @@ export async function ethEnabled() {
     const provider = await detectEthereumProvider() as EthereumProvider | null;
     if (provider !== window.ethereum) {
         console.error('Do you have multiple wallets installed?');
-        return;
+        return {};
     }
     if (!window.web3) {
         // @ts-ignore
@@ -31,6 +31,6 @@ export async function ethEnabled() {
     }
     const web3 = window.web3 as Web3
     //set web3 in state?
-    return {provider, web3};
+    return {provider: provider, web3: web3};
 }
 

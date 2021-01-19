@@ -16,7 +16,7 @@ export default function MetamaskButton() {
 
     const [buttonText, setButtonText] = React.useState(ONBOARD_TEXT);
     const [isDisabled, setDisabled] = React.useState(false);
-    const [accounts, setAccounts] = React.useState([]);
+    const [accounts, setAccounts] = React.useState<string[]>([]);
     const onboarding = React.useRef<MetaMaskOnboarding>();
 
     React.useEffect(() => {
@@ -30,7 +30,9 @@ export default function MetamaskButton() {
             if (accounts.length > 0) {
                 setButtonText(CONNECTED_TEXT);
                 setDisabled(true);
-                onboarding.current.stopOnboarding();
+                if (onboarding && onboarding.current) {
+                    onboarding.current.stopOnboarding();
+                }
             } else {
                 setButtonText(CONNECT_TEXT);
                 setDisabled(false);
@@ -39,15 +41,14 @@ export default function MetamaskButton() {
     }, [accounts]);
 
     React.useEffect(() => {
-        function handleNewAccounts(newAccounts) {
+        function handleNewAccounts(newAccounts: string[]) {
             setAccounts(newAccounts);
             dispatch(setEthereumAccount(newAccounts[0]))
         }
 
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             // @ts-ignore
-            window.ethereum
-                .request({method: 'eth_requestAccounts'})
+            window.ethereum.request({method: 'eth_requestAccounts'})
                 .then(handleNewAccounts);
             // @ts-ignore
             window.ethereum.on('accountsChanged', handleNewAccounts);

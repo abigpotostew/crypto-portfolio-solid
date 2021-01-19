@@ -24,10 +24,19 @@ export class CovalentService implements RESTService {
     host: string
     key: string
 
-    constructor(host: string, key: string) {
-        this.host = host;
-        this.key = key;
+    constructor(host: string | undefined, key: string | undefined) {
+        if (host) {
+            this.host = host;
+        } else {
+            this.host = process.env.NEXT_PUBLIC_COVALENT_HOST || ""
+        }
+        if (key) {
+            this.key = key;
+        } else {
+            this.key = process.env.NEXT_PUBLIC_COVALENT_API_KEY || ""
+        }
     }
+
 
     async getTokenAddressBalances(chainId: number, address: Address): Promise<GetTokenAddressBalancesResponse> {
         //GET /v1/{chainId}/address/{address}/balances_v2/

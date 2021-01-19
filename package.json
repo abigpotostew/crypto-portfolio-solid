@@ -19,7 +19,6 @@
     "@metamask/detect-provider": "^1.2.0",
     "@metamask/onboarding": "^1.0.0",
     "@solid/react": "^1.10.0",
-    "@types/": "metamask/detect-provider",
     "assert": "^2.0.0",
     "moment": "^2.29.1",
     "next": "^9",
