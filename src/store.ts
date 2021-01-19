@@ -45,7 +45,7 @@ export interface Trade {
     fee: Price
     // cost: number; //in dollars, fiat
     // fee: number; //always in fiat
-    url: string; //pod ref
+    url: string; // pod subject ref, consider this private, do not use
     dateCreated: Date;
     dateModified: Date;
     dirty: boolean;
@@ -146,10 +146,16 @@ function hydrateTradeData(podDocument: TripleDocument, tradeSubject: TripleSubje
         },
 
         // $100.19
-        cost: {amount: parseFloat(outAmount.getString(schema.price) || "0"), currency: USD},
+        cost: {
+            amount: parseFloat(outAmount.getString(schema.price) || "0"),
+            currency: new UncheckedCurrency(outAmount.getString(schema.priceCurrency) || "<missing")
+        },
 
         // $1.11
-        fee: {amount: parseFloat(feeAmount.getString(schema.price) || "0"), currency: USD},
+        fee: {
+            amount: parseFloat(feeAmount.getString(schema.price) || "0"),
+            currency: new UncheckedCurrency(feeAmount.getString(schema.priceCurrency) || "<missing")
+        },
 
         url: tradeSubject.asRef(),
         dateCreated: trade.getDateTime(schema.dateCreated) || new Date(0),
@@ -241,11 +247,11 @@ export async function saveTradesToLedger(podDocument: PodDocument | null, trades
         })
     }
 
-    updatedTrades.push(...deletes.map((d) => {
-        const s = doc.getSubject(d.url)
-        doc.removeSubject(d.url)
-        return s
-    }))
+    // updatedTrades.push(...deletes.map((d) => {
+    //     const s = doc.getSubject(d.url)
+    //     doc.removeSubject(d.url)
+    //     return s
+    // }))
     //todo add all the price specs
 
     if (updatedTrades.length > 0) {
@@ -295,7 +301,7 @@ function setTradeInDocument(podDocument: PodDocument, tradeData: Trade, tradeSub
         amountSubject ? modifiedSubjects.push(amountSubject) : null;
     }
 
-    addAmount(LedgerType.outAmount, tradeData.amount)
+    addAmount(LedgerType.outAmount, tradeData.cost)
     addAmount(LedgerType.feeAmount, tradeData.fee)
     modifiedSubjects.push(tradeSubject)
     return modifiedSubjects

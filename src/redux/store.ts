@@ -7,19 +7,22 @@ import {PodDocument, Trade} from "../store";
 // export default createStore(appReducer);
 
 
+export interface AppState {
+    ledgersState: LedgerState
+    webId: string | null
+
+    ethereumAccount: string | null;
+}
+
 export interface LedgerState {
     podDocument: PodDocument | null
     trades: Trade[]
 }
 
-export interface AppState {
-    ledgersState: LedgerState
-    webId: string | null
-}
-
 const initialState: AppState = {
     ledgersState: {podDocument: null, trades: []},
     webId: null,
+    ethereumAccount: null
 };
 
 
