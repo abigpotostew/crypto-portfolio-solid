@@ -47,6 +47,17 @@ export default function MetamaskButton() {
         }
 
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
+
+        }
+    }, []);
+
+    const onClick = () => {
+        function handleNewAccounts(newAccounts: string[]) {
+            setAccounts(newAccounts);
+            dispatch(setEthereumAccount(newAccounts[0]))
+        }
+
+        if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             // @ts-ignore
             window.ethereum.request({method: 'eth_requestAccounts'})
                 .then(handleNewAccounts);
@@ -56,13 +67,6 @@ export default function MetamaskButton() {
                 // @ts-ignore
                 window.ethereum.off('accountsChanged', handleNewAccounts);
             };
-        }
-    }, []);
-
-    const onClick = () => {
-        if (MetaMaskOnboarding.isMetaMaskInstalled()) {
-            // @ts-ignore
-            window.ethereum.request({method: 'eth_requestAccounts'}).then((newAccounts) => setAccounts(newAccounts));
         } else {
             // @ts-ignore
             onboarding.current.startOnboarding();

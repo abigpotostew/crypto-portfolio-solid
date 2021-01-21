@@ -10,6 +10,6 @@ interface TickerSymbolLinkProps {
 export default function TickerSymbolLink({currency}: TickerSymbolLinkProps) {
 
     return (
-        <Link href={`/coin/${encodeURIComponent(currency.symbol)}`}>{currency.symbol}</Link>
+        <Link href={`/coin/${encodeURIComponent(currency.symbol.toUpperCase())}`}>{currency.symbol.toUpperCase()}</Link>
     )
 }

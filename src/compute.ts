@@ -25,17 +25,17 @@ function calcTotals(tradesList: Trade[], currencies: Currencies) {
             throw new Error("invalid currency " + t.amount.currency.symbol)
         }
         const holding = t.amount
-        const heldCurrency: Currency | null = currencies.get(t.amount.currency) || t.amount.currency
+        const heldCurrency: Currency = currencies.get(t.amount.currency) || t.amount.currency
         const cost = t.cost
         const fee = t.fee
-        const outCurrent = totals.get(cost.currency.symbol) || 0 //todo support non fiat costs
-        totals.set(cost.currency.symbol, outCurrent - cost.amount)
-        const inCurrent = totals.get(heldCurrency.symbol) || 0
-        totals.set(heldCurrency.symbol, inCurrent + holding.amount)
+        const outCurrent = totals.get(cost.currency.symbol.toLowerCase()) || 0 //todo support non fiat costs
+        totals.set(cost.currency.symbol.toLowerCase(), outCurrent - cost.amount)
+        const inCurrent = totals.get(heldCurrency.symbol.toLowerCase()) || 0
+        totals.set(heldCurrency.symbol.toLowerCase(), inCurrent + holding.amount)
         if (fee.amount > 0) {
             let feeCoinResolved = fee.currency
-            const currFeeCoin = totals.get(feeCoinResolved.symbol) || 0
-            totals.set(feeCoinResolved.symbol, currFeeCoin - fee.amount)
+            const currFeeCoin = totals.get(feeCoinResolved.symbol.toLowerCase()) || 0
+            totals.set(feeCoinResolved.symbol.toLowerCase(), currFeeCoin - fee.amount)
         }
     }
     return totals

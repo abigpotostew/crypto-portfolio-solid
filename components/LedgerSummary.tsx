@@ -1,14 +1,14 @@
-import { Currencies, MarketRates } from "../src/marketdata/provider";
-import { getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade } from "../src/store";
+import {Currencies, MarketRates} from "../src/marketdata/provider";
+import {getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade} from "../src/store";
 import React from "react"
-import EnhancedTable, { EditableNumericCell } from "./EnhancedTable";
-import computeMarketRate, { MarketHolding, NewCompute } from "../src/compute";
-import { USD } from "../src/currencies";
-import { getPodFromWebId } from "./Ledgers";
+import EnhancedTable, {EditableNumericCell} from "./EnhancedTable";
+import computeMarketRate, {MarketHolding, NewCompute} from "../src/compute";
+import {USD} from "../src/currencies";
+import {getPodFromWebId} from "./Ledgers";
 import TickerSymbolLink from "./currency/TickerSymbolLink";
-import { useWebId } from "../src/authentication";
-import { useSelector, useDispatch } from 'react-redux'
-import { AppState } from "../src/redux/store";
+import {useWebId} from "../src/authentication";
+import {useSelector, useDispatch} from 'react-redux'
+import {AppState} from "../src/redux/store";
 
 interface LedgerSummaryProps {
     marketRates: MarketRates
@@ -16,7 +16,7 @@ interface LedgerSummaryProps {
     trades: Trade[]
 }
 
-export default function LedgerSummary({ marketRates, currencies, trades }: LedgerSummaryProps) {
+export default function LedgerSummary({marketRates, currencies, trades}: LedgerSummaryProps) {
     const webId = useSelector((state: AppState) => state.webId)
     const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
     const dispatch = useDispatch()
@@ -41,7 +41,7 @@ export default function LedgerSummary({ marketRates, currencies, trades }: Ledge
         if (currencies.getAll().length > 0) {
             setSummaryData(compute.holdings(data, USD, marketRates, currencies))
         }
-    }, [data, marketRates, currencies])
+    }, [podDocument, data, marketRates, currencies])
 
 
     const [skipPageReset, setSkipPageReset] = React.useState(false)
@@ -54,7 +54,7 @@ export default function LedgerSummary({ marketRates, currencies, trades }: Ledge
                 // @ts-ignore
                 Cell: (table, cell) => {
                     //should have precision of the currency
-                    return (<TickerSymbolLink currency={table.value} />)
+                    return (<TickerSymbolLink currency={table.value}/>)
                 },
             },
             {
@@ -106,7 +106,7 @@ export default function LedgerSummary({ marketRates, currencies, trades }: Ledge
         // dispatch the thing
         dispatch({
             type: 'set_ledgers_state',
-            payload: { "podDocument": fetchedPodDocument }
+            payload: {"podDocument": fetchedPodDocument}
         });
         console.log("setDataHandler dispatched")
     }
