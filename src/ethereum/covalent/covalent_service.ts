@@ -7,8 +7,6 @@ import {
 } from "./covalent";
 import superagent from "superagent"
 
-// const host = process.env.NEXT_PUBLIC_COVALENT_HOST
-// const key = process.env.NEXT_PUBLIC_COVALENT_API_KEY
 
 interface APIResponse {
 
@@ -63,11 +61,8 @@ export class CovalentService implements RESTService {
         url.pathname = `/v1/1/address/${address}/transactions_v2/`
         url.searchParams.append("no-logs", "true")
 
-        // todo  find deposits/withdrawls based on the value field and to/from address
-        // todo use value quote for value at the time
         // todo use withdrawl weth contract 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 if a uniswap input is detected
         //  see txn 0x299f00936fcb7a64df178a477ebcf1e7ba55855b970f59c1b2ddad534716b105
-        //
         const json = await this.getJson(url)
         return json as GetTransactionsResponse
     }
