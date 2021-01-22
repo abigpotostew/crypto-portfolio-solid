@@ -1,7 +1,7 @@
 import {
     Address,
     GetERC20TokenTransfersResponse,
-    GetTokenAddressBalancesResponse,
+    GetTokenAddressBalancesResponse, GetTransactionsResponse,
     PaginationOptions,
     RESTService
 } from "./covalent";
@@ -58,7 +58,19 @@ export class CovalentService implements RESTService {
     }
 
     //todo how to get eth??
+    async getEtherTransfers(address: Address, paginationOpts: PaginationOptions): Promise<GetTransactionsResponse> {
+        const url = new URL(this.host);
+        url.pathname = `/v1/1/address/${address}/transactions_v2/`
+        url.searchParams.append("no-logs", "true")
 
+        // todo  find deposits/withdrawls based on the value field and to/from address
+        // todo use value quote for value at the time
+        // todo use withdrawl weth contract 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 if a uniswap input is detected
+        //  see txn 0x299f00936fcb7a64df178a477ebcf1e7ba55855b970f59c1b2ddad534716b105
+        //
+        const json = await this.getJson(url)
+        return json as GetTransactionsResponse
+    }
 
     private async getJson(url: URL): Promise<object> {
         return new Promise((resolve, reject) => {

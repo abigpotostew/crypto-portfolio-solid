@@ -28,6 +28,7 @@ export class PodDocument {
 }
 
 export enum TradeType {
+    NONE = 0,
     BUY = 1,
     SELL,
     TRANSFER_IN,

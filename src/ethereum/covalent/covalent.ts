@@ -5,6 +5,8 @@ export interface RESTService {
 
     getERC20TokenTransfers(address: Address, contractAddress: Address, paginationOpts: PaginationOptions): Promise<GetERC20TokenTransfersResponse>
 
+    getEtherTransfers(address: Address, paginationOpts: PaginationOptions): Promise<GetTransactionsResponse>
+
 }
 
 export type Address = string
@@ -37,25 +39,32 @@ export interface TokenBalance {
     //nft omitted
 }
 
-export interface GetERC20TokenTransfersResponse {
+export interface CovalentTransactionCollectionResponse<T> {
     address: Address
     updated_at: Date
     next_update_at: Date
     quote_currency: string
     chain_id: number//int32
-    items: ERC20TokenTransfersItem[]
+    items: T[]
     pagination: PaginationResponse
 }
 
-export interface ERC20TokenTransfersItem {
+export interface GetTransactionsResponse extends CovalentTransactionCollectionResponse<CovalentTransaction> {
+}
+
+export interface GetERC20TokenTransfersResponse extends CovalentTransactionCollectionResponse<ERC20TokenTransfersItem> {
+}
+
+
+export interface CovalentTransaction {
     block_signed_at: Date
     tx_hash: string
     tx_offset: number//int32
     successful: boolean
     from_address: string
-    from_address_label: string
+    from_address_label: string | null
     to_address: string
-    to_address_label: string
+    to_address_label: string | null
     value: string//The value attached to this tx.
     value_quote: number//float //The value attached in quote-currency to this tx.
     gas_offered: number//int64//The gas offered for this tx.
@@ -63,6 +72,9 @@ export interface ERC20TokenTransfersItem {
     gas_price: number///int64//The gas price at the time of this tx.
     gas_quote: number//float//The gas spent in quote-currency denomination.
     gas_quote_rate: number//float//Historical ETH price at the time of tx.
+}
+
+export interface ERC20TokenTransfersItem extends CovalentTransaction {
     transfers: ERC20TokenTransfersItemTransfers[]
 }
 

@@ -8,7 +8,7 @@ import {useSelector, useDispatch} from 'react-redux'
 import {CovalentService} from "../../src/ethereum/covalent/covalent_service";
 import {TokenBalance} from "../../src/ethereum/covalent/covalent";
 import {Trade} from "../../src/store";
-import {asTrades} from "../../src/ethereum/covalent/data";
+import {asTrade, asTrades, getTransactionHashes} from "../../src/ethereum/covalent/data";
 
 const IMPORT_TXNS_TEXT = 'Import Txns';
 const NOT_CONNECTED_TEXT = 'Not Connected';
@@ -49,13 +49,33 @@ export default function ImportButton({handleSyncTrades}: ImportTradesProps) {
         const balances = await covalent.getTokenAddressBalances(1, ethAccount)
 
         const combined: Trade[] = [];
+        const uniqueTxnHashes = new Set<string>()
         for (const item of balances.items) {
             console.log(`${item.contract_name} valued at ${item.quote}`)
             const tknTransfers = await covalent.getERC20TokenTransfers(ethAccount, item.contract_address, {})
+            const hashes = getTransactionHashes(tknTransfers)
+            hashes.forEach((h) => uniqueTxnHashes.add(h))
             console.log(tknTransfers)
-            combined.push(...asTrades(tknTransfers))
-
+            combined.push(...asTrades(ethAccount, tknTransfers))
         }
+
+
+        const etherTransfers = await covalent.getEtherTransfers(ethAccount, {})
+        for (const t of etherTransfers.items) {
+            // every transfer is an eth txn because gas. filter out erc20 transfers
+            if (uniqueTxnHashes.has(t.tx_hash)) {
+                //skip if it's been processed in erc20 loop
+                continue
+            }
+            const trade = asTrade(ethAccount, t)
+            if (trade) {
+                combined.push(trade)
+            }
+        }
+        
+        //todo get weth transfers
+
+
         handleSyncTrades(combined)
     }
 
