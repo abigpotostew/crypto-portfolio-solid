@@ -73,7 +73,7 @@ export default function LedgerSummary({marketRates, currencies, trades}: LedgerS
                 accessor: 'totalMarketHoldings',
                 // @ts-ignore
                 Cell: (table, cell) => {
-                    return (<span>${table.value}</span>)
+                    return (<span>${table.value.toFixed(2)}</span>)
                 },
             },
 

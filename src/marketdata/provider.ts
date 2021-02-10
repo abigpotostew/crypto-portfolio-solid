@@ -166,27 +166,27 @@ class CoinGecko implements Provider {
         superagent.get(listIds)
             .set("Accept", "application/json")
             .end((err, res) => {
-                // Calling the end function will send the request
-                if (err) {
-                    return callback(err)
-                } else {
-                    if (res.status === 200) {
-                        //parse it
-
-                        const symbolMap = new Map<string, Currency>()
-                        for (var i = 0; i < res.body.length; ++i) {
-                            const c = res.body[i]
-                            symbolMap.set(res.body[i].symbol, new ValidCurrency(c.id, c.symbol, c.name))
-                        }
-
-                        this.symbolMap = symbolMap
-                        callback(null)
+                    // Calling the end function will send the request
+                    if (err) {
+                        return callback(err)
                     } else {
-                        const err = new Error(`Unexpected status ${res.status} from ${listIds}, body: ${res.body}`)
-                        callback(err)
+                        if (res.status === 200) {
+                            //parse it
+
+                            const symbolMap = new Map<string, Currency>()
+                            for (var i = 0; i < res.body.length; ++i) {
+                                const c = res.body[i]
+                                symbolMap.set(res.body[i].symbol, new ValidCurrency(c.id, c.symbol, c.name))
+                            }
+
+                            this.symbolMap = symbolMap
+                            callback(null)
+                        } else {
+                            const err = new Error(`Unexpected status ${res.status} from ${listIds}, body: ${res.body}`)
+                            callback(err)
+                        }
                     }
                 }
-            }
             );
     }
 
@@ -217,10 +217,14 @@ class CoinGecko implements Provider {
     fetchMarketRates(outCurrency: string, supportedCurrencies: Array<Currency>, callback: (err: (Error | null), mr: (MarketRates | null)) => void): void {
         const vsCurrency = outCurrency.toLowerCase()
 
+        const setCurrencyIds = new Set<string>();
         const currIds = new Array<string>()
         supportedCurrencies.forEach((c) => {
             const v = this.symbolMap.get(c.symbol.toLowerCase())
-            if (v) currIds.push(v.id)
+            if (v && !setCurrencyIds.has(v.id)) {
+                currIds.push(v.id)
+                setCurrencyIds.add(v.id)
+            }
         })
 
 
@@ -230,42 +234,49 @@ class CoinGecko implements Provider {
         superagent.get(url)
             .set("Accept", "application/json")
             .end((err, res) => {
-                // Calling the end function will send the request
-                if (err) {
-                    return callback(err, null)
-                } else {
-                    if (res.status === 200) {
-                        //parse it
-
-                        const forUsd = new Map<string, number>()
-                        for (var i = 0; i < res.body.length; ++i) {
-                            const market = res.body[i]
-                            // const avg = (market.high_24h + market.low_24h) / 2
-                            const high = market.high_24h
-                            forUsd.set(market.symbol.toLowerCase(), high)
-                        }
-                        const rates = {
-                            get: (outC: string | Currency, inC: string | Currency) => {
-                                let outCurrencyStr = (typeof outC === "string") ? outC : outC.symbol
-                                let inCurrencyStr = (typeof inC === "string") ? inC : inC.symbol
-                                if (outCurrencyStr === inCurrencyStr) return 1.0
-                                const out = forUsd.get(outCurrencyStr.toLowerCase())
-                                if (!out) {
-                                    throw new Error(`unsupported currency: '${outCurrencyStr}'`)
-                                } else {
-                                    return forUsd.get(inCurrencyStr.toLowerCase()) || 0.0
-                                }
-                            },
-                            pending: () => false
-                        }
-
-                        return callback(null, rates)
-                    } else {
-                        const err = new Error(`Unexpected status ${res.status} from ${url}, body: ${res.body}`)
+                    // Calling the end function will send the request
+                    if (err) {
                         return callback(err, null)
+                    } else {
+                        if (res.status === 200) {
+                            //parse it
+
+                            const forUsd = new Map<string, number>()
+                            for (var i = 0; i < res.body.length; ++i) {
+                                const market = res.body[i]
+                                // const avg = (market.high_24h + market.low_24h) / 2
+                                const high = market.high_24h
+                                forUsd.set(market.symbol.toLowerCase(), high)
+                            }
+                            const rates = {
+                                get: (outC: string | Currency, inC: string | Currency) => {
+                                    let outCurrencyStr = (typeof outC === "string") ? outC : outC.symbol
+                                    let inCurrencyStr = (typeof inC === "string") ? inC : inC.symbol
+                                    if (outCurrencyStr === inCurrencyStr) return 1.0
+                                    if (inCurrencyStr.toLowerCase() !== "usd") {
+                                        console.error(`unsupported in currency ${inCurrencyStr}`)
+                                        return 0.0
+                                    }
+                                    return forUsd.get(outCurrencyStr.toLowerCase()) || 0.0
+
+                                    // const out = forUsd.get(outCurrencyStr.toLowerCase())
+                                    // if (!out) {
+                                    //     console.error(`unsupported currency: '${outCurrencyStr}'`)
+                                    //     return 0.0
+                                    // } else {
+                                    //     return forUsd.get(inCurrencyStr.toLowerCase()) || 0.0
+                                    // }
+                                },
+                                pending: () => false
+                            }
+
+                            return callback(null, rates)
+                        } else {
+                            const err = new Error(`Unexpected status ${res.status} from ${url}, body: ${res.body}`)
+                            return callback(err, null)
+                        }
                     }
                 }
-            }
             )
     }
 

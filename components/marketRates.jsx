@@ -1,5 +1,6 @@
 import {useState, useEffect} from "react"
 import React from "react"
+import Loading from "./loading/loading";
 
 export default function MarketRatesTicker({rates}) {
     // const [rates, setRates] = useState(initialRates)
@@ -11,6 +12,9 @@ export default function MarketRatesTicker({rates}) {
 
     // assume USD
     return (
-        <p>${rates.get("USD", "ETH")} / ETH</p>
+
+        (!rates) ? <Loading/> : <p>${rates.get("ETH", "USD")} / ETH</p>
+
     )
+
 }

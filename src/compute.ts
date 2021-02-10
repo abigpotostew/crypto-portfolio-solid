@@ -73,7 +73,7 @@ export function NewCompute() {
                 out.push({
                     currency: currencyProvider.get(currency)!,
                     totalHoldings: total,
-                    totalMarketHoldings: marketRates.get(fiat, currency) * total
+                    totalMarketHoldings: marketRates.get(currency, fiat) * total
                 })
             })
             return out

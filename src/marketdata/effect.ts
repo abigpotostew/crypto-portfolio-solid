@@ -159,6 +159,8 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
 
     const [marketRates, setMarketRates] = React.useState(provider.getLatestMarketRates())
 
+    // const [fetchingMarketRates, setFetchingMarketRates] = React.useState(false)
+
     const {
         trades: trades,
         uniqueCurrencies: uniqueCurrencies,
@@ -166,7 +168,11 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
         error: tradesError
     } = useTrades({webId: webId})
 
-    const getMarketRates = () => {
+    const getMarketRates = (uniqueCurrencies: Currency[]) => {
+        // if (fetchingMarketRates) {
+        //     return
+        // }
+        // setFetchingMarketRates(true)
         // todo filter out fiat somehow?
         let uniqueCryptoCoins = Array.from(uniqueCurrencies.values()).filter((t) => t.symbol !== "USD")
         uniqueCryptoCoins.push(...alwaysIncludeCoins)
@@ -178,6 +184,7 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
                 console.error("stopping market rates ticker")
             } else if (rates) {
                 setMarketRates(rates)
+                // setFetchingMarketRates(false)
             }
         })
     }
@@ -187,10 +194,10 @@ export function useMarketRates({provider}: UseCurrenciesProps) {
         //if currencies are empty
         // todo PERF this is running a lot of times
         if (!currenciesLoading && currencies.getAll().length > 0) {
-            getMarketRates()
+            getMarketRates(uniqueCurrencies)
         }
 
-    }, [currenciesLoading, currencies, trades]); // <-- empty dependency array
+    }, [currenciesLoading, currencies, trades, uniqueCurrencies]);
 
     const loading = (tradesLoading && currenciesLoading)
     const error = tradesError || currenciesError
