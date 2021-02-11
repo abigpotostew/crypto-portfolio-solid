@@ -49,7 +49,7 @@ export interface CovalentTransactionCollectionResponse<T> {
     pagination: PaginationResponse
 }
 
-export interface GetTransactionsResponse extends CovalentTransactionCollectionResponse<CovalentTransaction> {
+export interface GetTransactionsResponse extends CovalentTransactionCollectionResponse<CovalentTransactionWithLogs> {
 }
 
 export interface GetERC20TokenTransfersResponse extends CovalentTransactionCollectionResponse<ERC20TokenTransfersItem> {
@@ -76,6 +76,37 @@ export interface CovalentTransaction {
 
 export interface ERC20TokenTransfersItem extends CovalentTransaction {
     transfers: ERC20TokenTransfersItemTransfers[]
+}
+
+export interface CovalentTransactionWithLogs extends CovalentTransaction {
+    log_events?: TransactionLogEvent[]
+}
+
+export interface TransactionLogEvent {
+    block_signed_at: Date
+    block_height: number//int64
+    tx_hash: string
+    log_offset: number//int64
+    tx_offset: number//int64
+    raw_log_topics?: string
+    sender_address: string
+    sender_address_label: string
+    raw_log_data: string
+    decoded: DecodedItem
+}
+
+export interface DecodedItem {
+    name: string
+    signature: string
+    params: DecodedParameter[]
+}
+
+export interface DecodedParameter {
+    name: string
+    type: string
+    indexed: boolean
+    decoded: boolean
+    value: any //parameter value, typically a string
 }
 
 export interface PaginationResponse {

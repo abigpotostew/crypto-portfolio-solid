@@ -36,15 +36,6 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
     //filter trades to just this coin
 
 
-    //TODO figure out where this data should come from in a reused way
-    // const [data, setData] = React.useState(trades)
-    // const [data, setData] = React.useState(React.useMemo(() => {
-    //     //fetch data from doc
-    //     console.log("loaded data from memo")
-    //     // @ts-ignore
-    //     return trades
-    // }, [trades]))
-
     // React.useEffect(() => {
     //     console.log("setting data from doc trades...")
     //     podDocument && setData(getAllTradesDataFromDoc(podDocument))
@@ -160,10 +151,11 @@ export default function CoinPortfolio({marketRates, trades, coinId, currencies}:
     )
 
     React.useEffect(() => {
-        if (currencies.getAll().length > 0 && !marketRates.pending()) {
-            setTotalValue(compute.marketRateGrandTotal(data, USD, marketRates, currencies))
+        if (coin && data && currencies.getAll().length > 0 && !marketRates.pending()) {
+
+            setTotalValue(compute.marketRateTotal(data, USD, marketRates, coin, currencies))
         }
-    }, [marketRates, data, currencies])
+    }, [marketRates, data, currencies, coin])
 
     // We need to keep the table from resetting the pageIndex when we
     // Update data. So we can keep track of that flag with a ref.

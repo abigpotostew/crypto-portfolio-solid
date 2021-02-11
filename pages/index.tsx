@@ -18,6 +18,8 @@ import {AppState} from "../src/redux/store";
 import {useSelector, useDispatch} from 'react-redux'
 import {getAllTradesDataFromDoc, getLedgerDoc, saveTradesToLedger, Trade} from "../src/store";
 import {setLedgersState} from "../src/redux/actions";
+import HitRatio from "../components/HitRatio";
+import {NewCompute} from "../src/compute";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -37,7 +39,8 @@ export default function Home() {
 
     const podDocument = useSelector((state: AppState) => state.ledgersState.podDocument)
     const dispatch = useDispatch()
-
+    const trades = getAllTradesDataFromDoc(podDocument)
+    const compute = NewCompute()
     const onResetClick = async () => {
         if (!myWebId || !podDocument) {
             //todo show error
@@ -100,6 +103,8 @@ export default function Home() {
                 </Button>
                 <p>{myWebId}</p>
                 {myWebId ? <Ledgers/> : <p>you're logged out</p>}
+
+                <HitRatio trades={trades} compute={compute}/>
 
                 {/*<AuthButton popup="/popup.html" login="Login here!" logout="Log me out"/>*/}
                 {/*<LoggedOut>*/}
