@@ -1,8 +1,8 @@
-import {Trade} from "../src/store";
+import { Trade } from "../src/store";
 import TextField from '@material-ui/core/TextField';
 import React from "react"
-import {Compute} from "../src/compute";
-import {UncheckedCurrency} from "../src/marketdata/provider";
+import { Compute } from "../src/compute";
+import { UncheckedCurrency } from "../src/marketdata/provider";
 import Button from '@material-ui/core/Button';
 
 
@@ -12,8 +12,8 @@ interface HitRatioProps {
     compute: Compute
 }
 
-export default function HitRatio({trades, compute}: HitRatioProps) {
-    const [maker, setMaker] = React.useState("ETH")
+export default function HitRatio({ trades, compute }: HitRatioProps) {
+    const [maker, setMaker] = React.useState("DAI")
     const [taker, setTaker] = React.useState("APY")
     const [hitRatio, setHitRatio] = React.useState("-")
 
@@ -31,11 +31,11 @@ export default function HitRatio({trades, compute}: HitRatioProps) {
     }
     return (
         <span>
-<TextField id="hitRatioMaker" type="text" onChange={onChange} defaultValue={"ETH"}/> -
-<TextField id="hitRatioTaker" type="text" onChange={onChange} defaultValue={"APY"}/>
-<Button variant="contained" onClick={onClick}>HitRatio</Button>
+            <TextField id="hitRatioMaker" type="text" onChange={onChange} defaultValue={"DAI"} /> -
+            <TextField id="hitRatioTaker" type="text" onChange={onChange} defaultValue={"APY"} />
+            <Button variant="contained" onClick={onClick}>HitRatio</Button>
 
-    <span>={hitRatio}</span>
-</span>
+            <span>={hitRatio}</span>
+        </span>
     )
 }

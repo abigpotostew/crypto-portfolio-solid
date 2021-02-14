@@ -1,6 +1,6 @@
-import validCurrency, {USD} from "./currencies";
-import {Trade} from "./store";
-import {Currencies, Currency, MarketRates} from "./marketdata/provider";
+import validCurrency, { USD } from "./currencies";
+import { Trade } from "./store";
+import { Currencies, Currency, MarketRates } from "./marketdata/provider";
 
 export default function computeMarketRate(tradesList: Trade[], destCurrency: Currency, marketRates: MarketRates, currencies: Currencies) {
     const totals = calcTotals(tradesList, currencies)
@@ -45,7 +45,8 @@ function calcTotals(tradesList: Trade[], currencies: Currencies): Total {
     for (let i = 0; i < tradesList.length; ++i) {
         const t = tradesList[i]
         if (currencies.get(t.amount.currency) === null) {
-            throw new Error("invalid currency " + t.amount.currency.symbol)
+            console.log("invalid currency " + t.amount.currency.symbol)
+            continue;
         }
         const holding = t.amount
         const heldCurrency: Currency = currencies.get(t.amount.currency) || t.amount.currency
@@ -111,11 +112,12 @@ export function NewCompute(): Compute {
         hitRatio: (tradesList: Trade[], maker: Currency, taker: Currency): number => {
             const tradesListCopy = [...tradesList]
             tradesListCopy.sort((a, b) => {
-                const aS = a.dateCreated.toDateString()
-                const bS = b.dateCreated.toDateString()
-                if (aS < bS) return 1
-                if (aS > bS) return -1
-                return 0
+                return -1 * (b.dateCreated - a.dateCreated)
+                // const aS = a.dateCreated.
+                // const bS = b.dateCreated.toDateString()
+                // if (aS < bS) return -1
+                // if (aS > bS) return 1
+                // return 0
             })
             const calcProfit = (entry: Trade, exit: Trade): number => {
                 return exit.amount.amount - entry.cost.amount
@@ -126,7 +128,7 @@ export function NewCompute(): Compute {
             for (let i = 0; i < tradesListCopy.length; i++) {
                 const t = tradesListCopy[i]
                 if (openHit) {
-                    if (t.amount.currency.hasSymbol(taker.symbol) && t.cost.currency.hasSymbol(maker.symbol)) {
+                    if (t.amount.currency.hasSymbol(maker.symbol) && t.cost.currency.hasSymbol(taker.symbol)) {
                         //exit
                         const hit: Hit = {
                             entry: openHit,
@@ -139,8 +141,8 @@ export function NewCompute(): Compute {
                         }
                     }
                 } else {
-                    const hasMaker = t.amount.currency.hasSymbol(maker.symbol)
-                    const hasTaker = t.cost.currency.hasSymbol(taker.symbol)
+                    const hasMaker = t.cost.currency.hasSymbol(maker.symbol)
+                    const hasTaker = t.amount.currency.hasSymbol(taker.symbol)
                     if (hasMaker || hasTaker) {
                         const a = 1
                     }

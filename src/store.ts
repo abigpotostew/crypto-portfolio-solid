@@ -1,10 +1,10 @@
 // import {useEnsured, useProfile, useThing} from 'swrlit'
-import {RDF, RDFS} from '@inrupt/vocab-common-rdf'
+import { RDF, RDFS } from '@inrupt/vocab-common-rdf'
 import moment from 'moment'
-import {schema} from 'rdf-namespaces';
-import {USD} from "./currencies";
-import {createDocument, fetchDocument, TripleDocument, TripleSubject} from 'tripledoc';
-import {Currency, UncheckedCurrency} from "./marketdata/provider";
+import { schema } from 'rdf-namespaces';
+import { USD } from "./currencies";
+import { createDocument, fetchDocument, TripleDocument, TripleSubject } from 'tripledoc';
+import { Currency, UncheckedCurrency } from "./marketdata/provider";
 
 const docname = "Cryptocurrency%20Ledger.ttl"
 
@@ -68,9 +68,9 @@ export function newTrade(
     tradeType: TradeType
 ): Trade {
     const out: Trade = {
-        amount: {amount: amount, currency: currency},
-        cost: {amount: cost, currency: USD}, //todo support coins
-        fee: {amount: cost, currency: USD},
+        amount: { amount: amount, currency: currency },
+        cost: { amount: cost, currency: USD }, //todo support coins
+        fee: { amount: cost, currency: USD },
         url: url,
         dateCreated: dateCreated || new Date(),
         dateModified: dateModified || new Date(),
@@ -260,7 +260,7 @@ export async function saveTradesToLedger(podDocument: PodDocument | null, trades
         console.log("saving new trades")
         const savedDoc = await doc.save(updatedTrades);
         console.log("saved new trades")
-        return {podDocumentModified: savedDoc, tradesData: tradesData}
+        return { podDocumentModified: savedDoc, tradesData: tradesData }
     }
 }
 
