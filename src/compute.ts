@@ -112,7 +112,7 @@ export function NewCompute(): Compute {
         hitRatio: (tradesList: Trade[], maker: Currency, taker: Currency): number => {
             const tradesListCopy = [...tradesList]
             tradesListCopy.sort((a, b) => {
-                return -1 * (b.dateCreated - a.dateCreated)
+                return -1 * (b.dateCreated.getTime() - a.dateCreated.getTime())
                 // const aS = a.dateCreated.
                 // const bS = b.dateCreated.toDateString()
                 // if (aS < bS) return -1
