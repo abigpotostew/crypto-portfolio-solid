@@ -79,11 +79,21 @@ export interface Compute {
     holdings(tradesList: Trade[], destCurrency: Currency, marketRates: MarketRates, currencyProvider: Currencies): MarketHolding[]
 
     hitRatio(tradesList: Trade[], maker: Currency, taker: Currency): number
+
+    hitRatioAll(tradesList: Trade[]): HitData // todo accept a heuristic
 }
 
-interface Hit {
+export interface HitData {
+    hitRatio: number
+    openHits: Trade[]
+    closedHits: Hit[]
+}
+
+export interface Hit {
     entry: Trade
     exit: Trade
+    maker: Currency
+    taker: Currency
     profit: number
 }
 
@@ -133,7 +143,9 @@ export function NewCompute(): Compute {
                         const hit: Hit = {
                             entry: openHit,
                             exit: t,
-                            profit: calcProfit(openHit, t)
+                            profit: calcProfit(openHit, t),
+                            maker: openHit.cost.currency,
+                            taker: openHit.amount.currency
                         }
                         hits.push(hit)
                         if (hit.profit > 0) {
@@ -156,6 +168,65 @@ export function NewCompute(): Compute {
                 return 0
             }
             return profitableHitCount / hits.length;
+        },
+        hitRatioAll: hitRatioAll
+    }
+}
+
+const hitRatioAll = (trades: Trade[]): HitData => {
+    const tradesListCopy = [...trades]
+    tradesListCopy.sort((a, b) => {
+        // descending time
+        return -1 * (b.dateCreated.getTime() - a.dateCreated.getTime())
+    })
+    const calcProfit = (entry: Trade, exit: Trade): number => {
+        return exit.amount.amount - entry.cost.amount
+    }
+    const hits: Hit[] = []
+    let profitableHitCount = 0
+
+    let openHits: Map<String, Trade> = new Map();//taker currency symbol to the trade with the amount==taker
+
+    for (let i = 0; i < tradesListCopy.length; i++) {
+        const t = tradesListCopy[i]
+        const openHit = openHits.get(t.cost.currency.symbol)
+        if (openHit) {
+            const exitTaker = openHit.cost.currency.symbol;
+            const exitMaker = openHit.amount.currency.symbol;
+            if (t.amount.currency.hasSymbol(exitTaker) && t.cost.currency.hasSymbol(exitMaker)) {
+                //exit
+                const hit: Hit = {
+                    entry: openHit,
+                    exit: t,
+                    profit: calcProfit(openHit, t),
+                    maker: openHit.cost.currency,
+                    taker: openHit.amount.currency
+                }
+                hits.push(hit)
+                if (hit.profit > 0) {
+                    profitableHitCount++;
+                }
+            }
+        } else {
+            const entryMaker = t.cost.currency.symbol;
+            const entryTaker = t.amount.currency.symbol;
+
+            // todo if it doesn't have it yet
+            if (t.cost.amount > 0) {
+                openHits.set(entryTaker, t)
+            }
+
         }
     }
+    let hitRatio = 0;
+    if (hits.length > 0) {
+        hitRatio = profitableHitCount / hits.length
+    }
+    const out: HitData = {
+        hitRatio: hitRatio,
+        openHits: Array.from(openHits.values()),
+        closedHits: hits,
+    }
+
+    return out
 }

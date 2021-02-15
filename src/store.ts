@@ -316,6 +316,6 @@ function setNewTradeInDocument(podDocument: PodDocument, tradeData: Trade): Trip
         tradeData,
         tradeSubject
     )
-    tradeSubject.setDateTime(schema.dateCreated, moment().toDate())
+    tradeSubject.setDateTime(schema.dateCreated, moment(tradeData.dateCreated).toDate())
     return modifiedSubjects
 }
