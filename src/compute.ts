@@ -1,5 +1,5 @@
 import validCurrency, { USD } from "./currencies";
-import { Trade } from "./store";
+import { Trade, TradeType } from "./store";
 import { Currencies, Currency, MarketRates } from "./marketdata/provider";
 
 export default function computeMarketRate(tradesList: Trade[], destCurrency: Currency, marketRates: MarketRates, currencies: Currencies) {
@@ -208,6 +208,7 @@ const hitRatioAll = (trades: Trade[]): HitData => {
                 }
             }
         } else {
+            //look at trade type
             const entryMaker = t.cost.currency.symbol;
             const entryTaker = t.amount.currency.symbol;
 

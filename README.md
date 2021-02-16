@@ -20,6 +20,17 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
 
+
+## Features
+Import transactions from metamask and summarize your holdings
+![wallet](https://github.com/abigpotostew/crypto-portfolio-solid/blob/main/sync-metamask-wallet.png?raw=true)
+
+View individual coin transactions
+![coin](https://github.com/abigpotostew/crypto-portfolio-solid/blob/main/one-coin-page.png?raw=true)
+
+Wallet Hit Ratio
+![hit ratio](https://github.com/abigpotostew/crypto-portfolio-solid/blob/main/summary-and-hit-ratio.png?raw=true)
+
 ## Todo list - MVP
 
 * [] Allow entering a trade for any of the supported currencies.
