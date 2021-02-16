@@ -22,13 +22,14 @@ You can start editing the page by modifying `pages/index.js`. The page auto-upda
 
 
 ## Features
-Import transactions from metamask and summarize your holdings
+#### Import transactions from metamask and summarize your holdings
 ![wallet](https://github.com/abigpotostew/crypto-portfolio-solid/blob/main/docs/sync-metamask-wallet.png?raw=true)
 
-View individual coin transactions
+#### View individual coin transactions
 ![coin](https://github.com/abigpotostew/crypto-portfolio-solid/blob/main/docs/one-coin-page.png?raw=true)
 
-Wallet Hit Ratio
+#### Wallet Hit Ratio
+
 ![hit ratio](https://github.com/abigpotostew/crypto-portfolio-solid/blob/main/docs/summary-and-hit-ratio.png?raw=true)
 
 ## Todo list - MVP
